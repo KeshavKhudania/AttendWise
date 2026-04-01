@@ -17,7 +17,7 @@ class AdminUserController extends Controller
             "users"=>AdminUser::where([
                 "deleted_at"=>null,
             ])->get(),
-            // "hospital_id"=>Crypt::decrypt(Session::get("hospital_id")),
+            // "adminal_id"=>Crypt::decrypt(Session::get("adminal_id")),
             "title"=>"Manage Users"
         ];
         return view("users.index", $data);
@@ -31,7 +31,7 @@ class AdminUserController extends Controller
             $data = [
                 "title"=>"Edit User",
                 "type"=>"EDIT",
-                "action"=>route("hospit.users.update", ["id"=>$req->segment(3)]),
+                "action"=>route("admin.users.update", ["id"=>$req->segment(3)]),
                 "permissions"=>unserialize(AdminGroup::find(Crypt::decrypt(Session::get("group_id")))->permissions),
                 "all_groups"=>AdminGroup::where([
                     "deleted_at"=>null,
@@ -51,7 +51,7 @@ class AdminUserController extends Controller
             $data = [
                 "title"=>"Create User",
                 "type"=>"ADD",
-                "action"=>route("hospit.users.create"),
+                "action"=>route("admin.users.create"),
                 "permissions"=>unserialize(AdminGroup::find(Crypt::decrypt(Session::get("group_id")))->permissions),
                 "all_groups"=>AdminGroup::where([
                     "deleted_at"=>null, 
@@ -91,7 +91,7 @@ class AdminUserController extends Controller
                 "mobile"=>$req->post("mobile"),
                 "group_id"=>Crypt::decrypt($req->post("group_id")),
                 "status"=>$req->post("status"),
-                "hospital_id"=>Crypt::decrypt(Session::get("hospital_id"))
+                "adminal_id"=>Crypt::decrypt(Session::get("adminal_id"))
             ])){
                 return json_encode(["msg"=>"User Created.", "color"=>"success", "icon"=>"check-circle"]);
             }
