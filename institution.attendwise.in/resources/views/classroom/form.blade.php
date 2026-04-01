@@ -113,9 +113,9 @@
       try {
         points = JSON.parse(hiddenField.value);
         points.forEach(p => appendRow(p[0], p[1], false));
-        redraw();
+        syncFromInputs();
         fitBounds();
-      } catch (e) { }
+      } catch (e) { console.error("Error loading points", e); }
     }
 
     /* ------------------------
@@ -222,6 +222,8 @@
     function fitBounds() {
       if (points.length >= 3) {
         map.fitBounds(points);
+      } else if (points.length > 0) {
+        map.setView(points[0], 18);
       }
     }
 

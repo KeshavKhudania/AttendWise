@@ -28,6 +28,9 @@ class ClassRoomController extends Controller
                 return abort(404,"Page Not Found");
             }
             $fields = $details;
+            if (!$fields->latlng && $fields->latitude && $fields->longitude) {
+                $fields->latlng = json_encode([[(float)$fields->latitude, (float)$fields->longitude]]);
+            }
             $data = [
                 "title"=>"Edit Class Room",
                 "type"=>"EDIT",
@@ -61,8 +64,13 @@ class ClassRoomController extends Controller
             foreach (Schema::getColumnListing('institution_classrooms') as $value) {
                 if (in_array($value, ['id','created_at','updated_at','deleted_at'])) continue;
                 if ($req->has($value)) {
-                 if ($value == 'latlng' && $req->post($value) != null) {
-                        $data[$value] = serialize($req->post($value));
+                    if ($value == 'latlng' && $req->post($value) != null) {
+                        $points = json_decode($req->post($value), true);
+                        $data[$value] = $points;
+                        if (!empty($points) && isset($points[0][0]) && isset($points[0][1])) {
+                            $data['latitude'] = $points[0][0];
+                            $data['longitude'] = $points[0][1];
+                        }
                     }else{
                         $data[$value] = $req->input($value);
                     }   
@@ -80,7 +88,12 @@ class ClassRoomController extends Controller
                 if (in_array($value, ['id','created_at','updated_at','deleted_at'])) continue;
                 if ($req->has($value)) {
                     if ($value == 'latlng' && $req->post($value) != null) {
-                        $data[$value] = serialize($req->post($value));
+                        $points = json_decode($req->post($value), true);
+                        $data[$value] = $points;
+                        if (!empty($points) && isset($points[0][0]) && isset($points[0][1])) {
+                            $data['latitude'] = $points[0][0];
+                            $data['longitude'] = $points[0][1];
+                        }
                     }else{
                         $data[$value] = $req->input($value);
                     }

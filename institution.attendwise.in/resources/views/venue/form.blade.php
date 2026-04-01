@@ -144,11 +144,8 @@
             try {
                 points = JSON.parse(hiddenField.value);
                 points.forEach(p => appendRow(p[0], p[1], false));
-                redraw();
-                if (points.length > 0) {
-                    if (points.length >= 3) map.fitBounds(points);
-                    else map.setView(points[0], 18);
-                }
+                syncFromInputs();
+                fitBounds();
             } catch (e) { console.error("Error loading points", e); }
         }
 
@@ -217,4 +214,47 @@
 
         /* ------------------------
            Sync inputs → polygon
-        ----
+        -------------------------*/
+        function syncFromInputs() {
+            points = [];
+            markers.forEach(m => map.removeLayer(m));
+            markers = [];
+
+            document.querySelectorAll('.latlng-row').forEach(row => {
+                const lat = parseFloat(row.querySelector('.lat').value);
+                const lng = parseFloat(row.querySelector('.lng').value);
+                if (!isNaN(lat) && !isNaN(lng)) {
+                    points.push([lat, lng]);
+                    markers.push(L.marker([lat, lng]).addTo(map));
+                }
+            });
+
+            redraw();
+            hiddenField.value = JSON.stringify(points);
+        }
+
+        /* ------------------------
+           Draw geofence polygon
+        -------------------------*/
+        function redraw() {
+            if (polygon) map.removeLayer(polygon);
+            if (points.length >= 3) {
+                polygon = L.polygon(points, {
+                    color: '#dc3545', // Danger theme for venues
+                    fillOpacity: 0.15,
+                    weight: 2
+                }).addTo(map);
+            }
+        }
+
+        function fitBounds() {
+            if (points.length >= 3) {
+                map.fitBounds(points, { padding: [20, 20] });
+            } else if (points.length > 0) {
+                map.setView(points[0], 18);
+            }
+        }
+
+    });
+</script>
+<x-footer />

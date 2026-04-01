@@ -28,6 +28,9 @@ class VenueController extends Controller
                 return abort(404, "Page Not Found");
             }
             $fields = $details;
+            if (!$fields->latlng && $fields->latitude && $fields->longitude) {
+                $fields->latlng = json_encode([[(float)$fields->latitude, (float)$fields->longitude]]);
+            }
             $data = [
                 "title" => "Edit Venue",
                 "type" => "EDIT",
@@ -60,7 +63,12 @@ class VenueController extends Controller
             if ($req->has($value)) {
                 if ($value == 'latlng' && $req->post($value) != null) {
                     // latlng is handled as JSON string in form, Cast handles encryption
-                    $data[$value] = is_string($req->post($value)) ? json_decode($req->post($value), true) : $req->post($value);
+                    $points = is_string($req->post($value)) ? json_decode($req->post($value), true) : $req->post($value);
+                    $data[$value] = $points;
+                    if (!empty($points) && isset($points[0][0]) && isset($points[0][1])) {
+                        $data['latitude'] = $points[0][0];
+                        $data['longitude'] = $points[0][1];
+                    }
                 }
                 else {
                     $data[$value] = $req->input($value);
