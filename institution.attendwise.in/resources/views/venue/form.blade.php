@@ -8,7 +8,7 @@
             <p class="text-muted small mb-0">Define venue details and draw a geofence area on the map below.</p>
         </div>
         <div>
-            <a href="{{ route('institution.venues') }}" class="btn btn-light border d-flex align-items-center">
+            <a href="{{ route('institution.venues.manage') }}" class="btn btn-light border d-flex align-items-center">
                 <i class="fa fa-arrow-left me-2"></i> Back to List
             </a>
         </div>
@@ -105,7 +105,7 @@
 
                     <div class="form-actions-bar">
                         <div class="container-fluid d-flex justify-content-end align-items-center">
-                            <a href="{{ route('institution.venues') }}"
+                            <a href="{{ route('institution.venues.manage') }}"
                                 class="btn btn-light me-3 px-4 py-2 border">Cancel</a>
                             <button type="submit" class="btn btn-primary px-5 py-2 fw-bold shadow-sm">
                                 <i class="fa fa-save me-2"></i> {{ $type == 'ADD' ? 'Create Venue' : 'Save Changes' }}
