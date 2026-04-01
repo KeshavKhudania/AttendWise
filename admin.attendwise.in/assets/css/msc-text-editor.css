@@ -1,0 +1,46 @@
+.msc-text-editor-view-box{
+    width: 100%;
+    /* padding: 10px; */
+    background-color: #fff;
+}
+.msc-text-editor-toolbar{
+    background-color: #fff;
+    padding: 10px;
+    border-bottom: 2px solid #000;
+}
+.msc-text-editor-toolbar-btn{
+    padding: 4px 8px !important;
+    border-radius: 5px !important;
+    margin: 3px;
+    background-color: #fff;
+    border: 2px solid #2a85ff;
+}
+.msc-text-editor-toolbar-btn.active, .msc-text-editor-toolbar-btn.active:focus, .msc-text-editor-toolbar-btn.active:focus-within{
+    background-color: #2a85ff !important;    
+    color: #fff;
+}
+.msc-text-editor-toolbar-btn i{
+    font-size: 12px !important;
+}
+.msc-text-editor-content-box{
+    background-color: #fff;
+    padding: 10px;
+}
+.msc-text-editor-content-box:focus{
+    border: none;
+    outline: none;
+}
+.msc-text-editor-toolbar-font-size-trigger{
+    border: 2px solid #2a85ff;
+    padding: 0.5px 5px ;
+    border-radius: 5px;
+}
+.msc-text-editor-toolbar-font-color-trigger, .msc-text-editor-toolbar-background-color-trigger{
+    border: none;
+    visibility: hidden;
+    border-radius: 50%;
+    padding: 0;
+    width: 0.01px;
+    height: 0.01px;
+    aspect-ratio: 1/1;
+}

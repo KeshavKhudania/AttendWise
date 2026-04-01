@@ -1,0 +1,12 @@
+Field	Type	Null	Key	Default	Extra
+id	bigint(20) unsigned	NO	PRI	NULL	auto_increment
+institution_id	bigint(20) unsigned	NO	MUL	NULL	
+student_id	bigint(20) unsigned	NO	MUL	NULL	
+schedule_id	bigint(20) unsigned	NO	MUL	NULL	
+marked_by_faculty_id	bigint(20) unsigned	NO	MUL	NULL	
+date	date	NO		NULL	
+status	enum('present','absent','late','excused')	NO		NULL	
+remarks	varchar(255)	YES		NULL	
+created_at	timestamp	YES		NULL	
+updated_at	timestamp	YES		NULL	
+deleted_at	timestamp	YES		NULL	

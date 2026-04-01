@@ -1,0 +1,40 @@
+Field	Type	Null	Key	Default	Extra
+id	bigint(20) unsigned	NO	PRI	NULL	auto_increment
+block_id	bigint(20) unsigned	NO	MUL	NULL	
+department_id	bigint(20) unsigned	YES	MUL	NULL	
+institution_id	bigint(20) unsigned	NO	MUL	NULL	
+name	varchar(255)	NO		NULL	
+type	varchar(255)	YES		NULL	
+capacity	int(10) unsigned	YES		NULL	
+latitude	decimal(10,8)	YES		NULL	
+longitude	decimal(11,8)	YES		NULL	
+latlng	longtext	YES		NULL	
+created_at	timestamp	YES		NULL	
+updated_at	timestamp	YES		NULL	
+deleted_at	timestamp	YES		NULL	
+status	int(11)	YES		1	
+Field	Type	Null	Key	Default	Extra
+id	bigint(20) unsigned	NO	PRI	NULL	auto_increment
+department_id	bigint(20) unsigned	NO	MUL	NULL	
+course_id	bigint(20)	YES		NULL	
+semester	int(11)	YES		NULL	
+institution_id	bigint(20) unsigned	NO	MUL	NULL	
+name	varchar(255)	NO		NULL	
+capacity	int(11)	YES		NULL	
+academic_year	varchar(255)	NO		NULL	
+created_at	timestamp	YES		NULL	
+updated_at	timestamp	YES		NULL	
+deleted_at	timestamp	YES		NULL	
+status	int(11)	YES		1	
+Field	Type	Null	Key	Default	Extra
+id	bigint(20) unsigned	NO	PRI	NULL	auto_increment
+institution_id	bigint(20) unsigned	NO	MUL	NULL	
+name	varchar(255)	NO		NULL	
+latitude	decimal(10,8)	YES		NULL	
+longitude	decimal(11,8)	YES		NULL	
+latlng	longtext	YES		NULL	
+radius	decimal(10,2)	YES		NULL	
+created_at	timestamp	YES		NULL	
+updated_at	timestamp	YES		NULL	
+deleted_at	datetime	YES		NULL	
+status	int(11)	YES		1	

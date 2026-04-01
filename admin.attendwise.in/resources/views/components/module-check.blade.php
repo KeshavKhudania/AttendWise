@@ -1,0 +1,3 @@
+@if ($allowed)
+    {{$slot}}
+@endif
