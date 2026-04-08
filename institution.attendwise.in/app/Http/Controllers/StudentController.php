@@ -15,11 +15,14 @@ use Illuminate\Support\Facades\Schema;
 class StudentController extends Controller
 {
     function index(Request $req){
-        
+        $perPage = $req->input('per_page', 200);
+        if ($perPage > 1000) $perPage = 1000;
+        if ($perPage < 200) $perPage = 200;
+
         $data = [
-            "students"=>Student::paginate(200),
-            // "adminal_id"=>,
-            "title"=>"Manage Students"
+            "students"=>Student::paginate($perPage)->withQueryString(),
+            "title"=>"Manage Students",
+            "per_page"=>$perPage
         ];
         return view("student.index", $data);
     }

@@ -155,7 +155,17 @@
 
 
         </x-module-check>
-        <x-btn-add route="institution.student.add.view" />
+        <div class="d-flex align-items-center gap-3">
+          <form method="GET" action="{{ route('institution.student.manage') }}" class="d-flex align-items-center gap-2">
+            <label class="small text-muted mb-0 text-nowrap">View:</label>
+            <select name="per_page" class="form-select form-select-sm" onchange="this.form.submit()">
+              @foreach([200, 500, 1000] as $size)
+                <option value="{{ $size }}" {{ $size == $per_page ? 'selected' : '' }}>{{ $size }}</option>
+              @endforeach
+            </select>
+          </form>
+          <x-btn-add route="institution.student.add.view" />
+        </div>
       </div>
 
       <div class="table-responsive">
@@ -176,7 +186,7 @@
           <tbody>
             @forelse ($students as $student)
               <tr>
-                <td>{{ $loop->iteration }}</td>
+                <td>{{ $students->firstItem() + $loop->index }}</td>
                 <td>{{ $student->name }}</td>
                 <td>{{ $student->roll_number }}</td>
                 <td>{{ $student->course?->name ?? '-' }}</td>
@@ -208,6 +218,15 @@
             @endforelse
           </tbody>
         </table>
+      </div>
+
+      <div class="mt-4 d-flex justify-content-between align-items-center">
+        <div class="small text-muted">
+          Showing {{ $students->firstItem() }} to {{ $students->lastItem() }} of {{ $students->total() }} students
+        </div>
+        <div>
+          {{ $students->links() }}
+        </div>
       </div>
 
     </div>

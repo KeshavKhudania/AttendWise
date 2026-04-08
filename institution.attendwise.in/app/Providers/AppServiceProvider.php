@@ -20,7 +20,9 @@ class AppServiceProvider extends ServiceProvider
      * Bootstrap any application services.
      */
     public function boot()
-{
+    {
+        \Illuminate\Pagination\Paginator::useBootstrapFive();
+
         Builder::macro('whereEncrypted', function (string $field, $value) {
             /** @var \Illuminate\Database\Eloquent\Builder $this */
             return $this->where($field . '_hash', search_hash($value));
