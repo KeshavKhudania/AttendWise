@@ -259,7 +259,7 @@ Route::middleware(CheckLogin::class)->group(function () {
                         Route::get("student/add", "formView")->name("institution.student.add.view");
                         Route::get("student/edit/{id}", "formView")->name("institution.student.edit.view");
                         Route::post("student/create", "form")->name("institution.student.create");
-                        Route::post("student/import-data", "import")->name("institution.student.import");
+                        Route::post("student/import-data", "import")->name("institution.student.manage.import");
                         Route::post("student/update/{id}", "form")->name("institution.student.update");
                         Route::post("student/delete/{id}", "delete")->name("institution.student.delete");
                     }

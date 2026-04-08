@@ -7,7 +7,7 @@
 
       <div class="d-flex justify-content-between align-items-center mb-3">
         <h5 class="mb-0">Students</h5>
-        <x-module-check route="institution.student.import">
+        <x-module-check route="institution.student.manage.import">
             <button
                 type="button"
                 class="btn btn-outline-primary"
@@ -37,7 +37,7 @@
                 data-bs-dismiss="modal"></button>
       </div>
 
-      <form action="{{ route('institution.student.import') }}"
+      <form action="{{ route('institution.student.manage.import') }}"
             method="POST"
             enctype="multipart/form-data" class="msc-ord-form">
         @csrf

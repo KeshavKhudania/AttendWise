@@ -16,8 +16,16 @@ class ModuleCheck extends Component
      */
     public $allowed;
     public function __construct($route)
-    {
-        $this->allowed = in_array($route,unserialize(AdminGroup::find(Crypt::decrypt(Session::get("group_id")))->permissions));
+    {   $allowed_permissions = unserialize(AdminGroup::find(Crypt::decrypt(Session::get("group_id")))->permissions);
+        $this->allowed = in_array($route,$allowed_permissions);
+        if (!$this->allowed) {
+            foreach ($allowed_permissions as $permission) {
+                    if (str_ends_with($permission, '.manage') && str_starts_with($route, $permission . '.')) {
+                        $this->allowed = true;
+                        break;
+                    }
+                }
+        }
     }
 
     /**
