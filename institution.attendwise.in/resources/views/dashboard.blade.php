@@ -153,6 +153,24 @@
             </div>
           </a>
         </div>
+        <div class="col-6">
+          <a href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#appErrorsModal" class="text-decoration-none">
+            <div class="card quick-action-card h-100">
+              <div class="card-body position-relative">
+                @if(count($app_errors) > 0)
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger shadow-sm" style="margin-top: 5px; margin-left: -15px; border: 2px solid white;">
+                  {{ count($app_errors) }}
+                </span>
+                @endif
+                <div class="quick-action-icon bg-soft-danger text-danger">
+                  <i class="fa fa-bug"></i>
+                </div>
+                <h6 class="mb-1 text-dark small fw-bold">App Logs</h6>
+                <p class="text-muted mb-0" style="font-size: 10px;">Monitor app health</p>
+              </div>
+            </div>
+          </a>
+        </div>
       </div>
     </div>
   </div>
@@ -312,7 +330,7 @@ document.addEventListener('DOMContentLoaded', function() {
             </thead>
             <tbody>
               @forelse($app_errors as $error)
-              <tr>
+              <tr data-bs-toggle="collapse" data-bs-target="#errorDetail{{ $error->id }}" style="cursor: pointer;">
                 <td class="px-4 small text-muted">
                   {{ $error->created_at->format('d M, H:i') }}
                   <div class="small" style="font-size: 10px;">{{ $error->created_at->diffForHumans() }}</div>
