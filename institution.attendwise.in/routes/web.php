@@ -22,6 +22,7 @@ use App\Http\Controllers\StudentController;
 use App\Http\Controllers\SubjectController;
 use App\Http\Controllers\InstitutionSettingController;
 use App\Http\Controllers\EventController;
+use App\Http\Controllers\AppErrorController;
 
 Route::controller(LoginController::class)->group(function () {
     Route::get("login", "index")->name("login_view");
@@ -37,6 +38,7 @@ Route::middleware(CheckLogin::class)->group(function () {
             Route::get("profile", "profile_view")->name("profile_view");
             Route::get("add-perm/{perm_name}/{icon}/{sort_order}/{perm_parent}/{perm_type}", "addPerms")->name("addPermFn");
             Route::get("add-front-perm/{perm_name}/{icon}/{sort_order}/{perm_parent}/{perm_type}", "addFrontPerms")->name("addFrontPermFn");
+            Route::post("app-errors/resolve/{id}", "resolveError")->name("institution.app-errors.resolve");
         }
         );
         Route::middleware(CheckRoute::class)->group(function () {

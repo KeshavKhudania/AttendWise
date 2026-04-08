@@ -48,6 +48,24 @@
 </div>
 
 <div class="container-fluid px-0">
+  <!-- App Errors Alert -->
+  @if(count($app_errors) > 0)
+  <div class="alert alert-danger shadow-sm border-0 d-flex align-items-center mb-4" role="alert">
+    <div class="flex-shrink-0 me-3">
+      <i class="fas fa-exclamation-triangle fa-2x"></i>
+    </div>
+    <div class="flex-grow-1">
+      <h6 class="alert-heading fw-bold mb-1">Mobile App Errors Detected</h6>
+      <p class="mb-0 small">There are {{ count($app_errors) }} unresolved technical errors reported by the mobile application.</p>
+    </div>
+    <div class="flex-shrink-0">
+      <button class="btn btn-danger btn-sm px-3 fw-bold" data-bs-toggle="modal" data-bs-target="#appErrorsModal">
+        View Error Log
+      </button>
+    </div>
+  </div>
+  @endif
+
   <!-- KPI Row -->
   <div class="row gx-4 mb-4">
     @foreach ($kpis as $item)
@@ -269,5 +287,120 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
+
+<!-- App Errors Modal -->
+<div class="modal fade" id="appErrorsModal" tabindex="-1" aria-labelledby="appErrorsModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content border-0 shadow-lg">
+      <div class="modal-header bg-danger text-white border-0 py-3">
+        <h5 class="modal-title fw-bold" id="appErrorsModalLabel">
+          <i class="fas fa-bug me-2"></i> Application Error Log
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="bg-light text-muted small text-uppercase">
+              <tr>
+                <th class="px-4 py-3">Timestamp</th>
+                <th>User / Student</th>
+                <th>Device Info</th>
+                <th>Error Message</th>
+                <th class="text-end px-4">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              @forelse($app_errors as $error)
+              <tr>
+                <td class="px-4 small text-muted">
+                  {{ $error->created_at->format('d M, H:i') }}
+                  <div class="small" style="font-size: 10px;">{{ $error->created_at->diffForHumans() }}</div>
+                </td>
+                <td>
+                  @if($error->student)
+                    <div class="fw-bold text-dark">{{ $error->student->name }}</div>
+                    <div class="small text-muted">Roll: {{ $error->student->roll_number }}</div>
+                  @else
+                    <span class="text-muted italic small">Guest Student</span>
+                  @endif
+                </td>
+                <td>
+                  <div class="small">
+                    <span class="badge bg-light text-dark border">{{ $error->app_version ?? 'v1.0' }}</span>
+                    <span class="ms-1 text-muted">{{ $error->device_info['model'] ?? 'Unknown' }}</span>
+                  </div>
+                </td>
+                <td>
+                  <div class="text-truncate" style="max-width: 300px;" title="{{ $error->error_message }}">
+                    {{ $error->error_message }}
+                  </div>
+                  <div class="small text-muted" style="font-size: 10px;">{{ $error->api_endpoint }}</div>
+                </td>
+                <td class="text-end px-4">
+                    <button class="btn btn-outline-secondary btn-xs py-1 px-2" type="button" data-bs-toggle="collapse" data-bs-target="#errorDetail{{ $error->id }}">
+                        Details
+                    </button>
+                </td>
+              </tr>
+              <tr class="collapse" id="errorDetail{{ $error->id }}">
+                <td colspan="5" class="p-4 bg-light shadow-inner">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body p-4">
+                            <div class="row">
+                                <div class="col-md-7">
+                                    <h6 class="fw-bold small text-uppercase text-muted border-bottom pb-2 mb-3">Stack Trace</h6>
+                                    <pre class="bg-dark text-light p-3 rounded small mb-0" style="max-height: 300px; overflow: auto; font-size: 11px;"><code>{{ $error->stack_trace }}</code></pre>
+                                </div>
+                                <div class="col-md-5">
+                                    <h6 class="fw-bold small text-uppercase text-muted border-bottom pb-2 mb-3">Technical Context</h6>
+                                    <div class="list-group list-group-flush small bg-white rounded border mb-3">
+                                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                                            <span class="text-muted">API Endpoint</span>
+                                            <span class="fw-bold">{{ $error->api_endpoint ?: 'N/A' }}</span>
+                                        </div>
+                                        <div class="list-group-item">
+                                            <div class="mb-2 text-muted fw-bold">Request Payload:</div>
+                                            <pre class="bg-light p-2 rounded mb-0" style="font-size: 10px; max-height: 150px; overflow: auto;"><code>{{ json_encode($error->request_payload, JSON_PRETTY_PRINT) }}</code></pre>
+                                        </div>
+                                        <div class="list-group-item">
+                                            <div class="mb-2 text-muted fw-bold">Device Info:</div>
+                                            <pre class="bg-light p-2 rounded mb-0" style="font-size: 10px;"><code>{{ json_encode($error->device_info, JSON_PRETTY_PRINT) }}</code></pre>
+                                        </div>
+                                    </div>
+                                    <div class="mt-3 text-end">
+                                        <form action="{{ route('institution.app-errors.resolve', $error->id) }}" method="POST" class="d-inline">
+                                            @csrf
+                                            <button type="submit" class="btn btn-success btn-sm px-4 fw-bold">
+                                                <i class="fas fa-check me-2"></i> Mark as Resolved
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </td>
+              </tr>
+              @empty
+              <tr>
+                <td colspan="5" class="text-center py-5">
+                    <div class="text-muted p-5">
+                        <i class="fas fa-check-circle fa-3x mb-3 text-light"></i>
+                        <p>All clear! No unresolved app errors.</p>
+                    </div>
+                </td>
+              </tr>
+              @endforelse
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer bg-light border-0">
+        <button type="button" class="btn btn-secondary shadow-sm" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <x-footer />

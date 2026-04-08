@@ -12,6 +12,7 @@ use App\Http\Controllers\StudentAuthController;
 Route::prefix('student/auth')->group(function () {
     // Public route — no token required
     Route::post('/login', [StudentAuthController::class, 'login']);
+    Route::post('/log-error', [\App\Http\Controllers\AppErrorController::class, 'store']);
 
     // Protected routes — require Sanctum token
     Route::middleware('auth:sanctum')->group(function () {

@@ -157,6 +157,10 @@ class HomeController extends Controller
                     "delta" => "+3 new"
                 ],
             ],
+            "app_errors" => \App\Models\AppErrorLog::with('student')
+                ->where('is_resolved', false)
+                ->orderBy('created_at', 'desc')
+                ->get(),
             "analytics" => [
                 "attendance" => [
                     "labels" => ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
