@@ -98,20 +98,18 @@ class StudentAuthController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Login successful.',
-            'data'    => [
-                'token'   => $token,
-                'student' => [
-                    'id'                => $student->id,
-                    'name'              => $student->name,
-                    'email'             => $student->email,
-                    'mobile'            => $student->mobile,
-                    'roll_number'       => $student->roll_number,
-                    'enrollment_number' => $student->enrollment_number,
-                    'institution'       => $student->institution ? [
-                        'id'   => $student->institution->id,
-                        'name' => $student->institution->legal_name,
-                    ] : null,
-                ],
+            'token'   => $token,
+            'student' => [
+                'id'                => $student->id,
+                'name'              => $student->name,
+                'email'             => $student->email,
+                'mobile'            => $student->mobile,
+                'roll_number'       => $student->roll_number,
+                'enrollment_number' => $student->enrollment_number,
+                'institution'       => $student->institution ? [
+                    'id'   => $student->institution->id,
+                    'name' => $student->institution->legal_name,
+                ] : null,
             ],
         ], 200);
     }
