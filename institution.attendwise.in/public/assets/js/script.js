@@ -284,7 +284,9 @@ $(document).ready(function () {
                         submitStatus = false;
                     },
                     success: function (response) {
-                        response = JSON.parse(response);
+                        if (typeof response === "string") {
+                            try { response = JSON.parse(response); } catch(e) {}
+                        }
                         mscToast({
                             "msg":response.msg,
                             "color":response.color,
@@ -342,7 +344,9 @@ $(document).ready(function () {
                         submitStatus = false;
                     },
                     success: function (response) {
-                        response = JSON.parse(response);
+                        if (typeof response === "string") {
+                            try { response = JSON.parse(response); } catch(e) {}
+                        }
                         mscToast({
                             "msg":response.msg,
                             "color":response.color,

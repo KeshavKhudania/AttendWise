@@ -262,6 +262,7 @@ Route::middleware(CheckLogin::class)->group(function () {
                         Route::post("student/import-data", "import")->name("institution.student.manage.import");
                         Route::post("student/update/{id}", "form")->name("institution.student.update");
                         Route::post("student/delete/{id}", "delete")->name("institution.student.delete");
+                        Route::get("student/download-sample", "downloadSample")->name("institution.student.manage.download_sample");
                     }
                     );
                     Route::controller(SectionController::class)->group(function () {

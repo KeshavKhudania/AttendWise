@@ -32,6 +32,11 @@
             Upload spreadsheet & configure academic structure
           </small>
         </div>
+        <div class="ms-auto me-3">
+          <a href="{{ route('institution.student.manage.download_sample') }}" class="btn btn-light btn-sm rounded-pill px-3">
+              <i class="fas fa-download me-1"></i> Sample CSV
+          </a>
+        </div>
         <button type="button"
                 class="btn-close btn-close-white"
                 data-bs-dismiss="modal"></button>
@@ -39,7 +44,7 @@
 
       <form action="{{ route('institution.student.manage.import') }}"
             method="POST"
-            enctype="multipart/form-data" class="msc-ord-form">
+            enctype="multipart/form-data" class="msc-ord-form" data-form-type="ADD">
         @csrf
 
         <!-- BODY -->
@@ -125,8 +130,8 @@
           <div class="mt-4 p-3 rounded-3 bg-light border">
             <small class="text-muted">
               <strong>CSV Columns:</strong><br>
-              roll_number, name, email, phone, gender,
-              department, course, section, class_group
+              roll_number, name, email, mobile, gender,
+              academic_year, semester, department, course, section, class_group
             </small>
           </div>
 

@@ -126,8 +126,7 @@ class StudentController extends Controller
 // );
         ImportStudentsJob::dispatch(
             $path,
-            // $request->academic_year,
-            get_logged_in_user()->institution_id, // your global institution resolver
+            get_logged_in_user()->institution_id,
             (bool) $request->assign_sections,
             (bool) $request->auto_create_sections,
             (int) ($request->avg_section_size ?? 30),
@@ -138,10 +137,50 @@ class StudentController extends Controller
 
 
 
-        return json_encode([
+        return response()->json([
             "msg" => "Student import job has been queued. You will be notified once it's completed.",
             "color" => "success",
             "icon" => "check-circle"
         ]);
+    }
+
+    public function downloadSample()
+    {
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="student_import_sample.csv"',
+        ];
+
+        $columns = [
+            'roll_number', 'name', 'email', 'mobile', 'gender',
+            'academic_year', 'semester', 'department', 'course', 'section', 'class_group'
+        ];
+
+        $callback = function() {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, [
+                'roll_number', 'name', 'email', 'mobile', 'gender',
+                'academic_year', 'semester', 'department', 'course', 'section', 'class_group'
+            ]);
+            
+            // Add a sample row
+            fputcsv($file, [
+                'CS2023001', 
+                'John Doe', 
+                'john@example.com', 
+                '9876543210', 
+                'male', 
+                '2023-24',
+                '1',
+                'Computer Science', 
+                'B.Tech', 
+                'A', 
+                'G1'
+            ]);
+            
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 }

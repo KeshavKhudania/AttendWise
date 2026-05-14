@@ -22,23 +22,32 @@ class ImportStudentsJob implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     protected string $filePath;
-    // protected string $academicYear; // fallback only
     protected int $institutionId;
+    protected bool $assignSections;
     protected bool $autoCreateSections;
     protected int $sectionCapacity;
+    protected string $sectionPrefix;
+    protected bool $autoCreateGroups;
+    protected string $groupPrefix;
 
     public function __construct(
         string $filePath,
-        string $academicYear,
         int $institutionId,
-        bool $autoCreateSections = true,
-        int $sectionCapacity = 30
+        bool $assignSections,
+        bool $autoCreateSections,
+        int $sectionCapacity,
+        string $sectionPrefix,
+        bool $autoCreateGroups,
+        string $groupPrefix
     ) {
         $this->filePath = $filePath;
-        // $this->academicYear = $academicYear; // fallback
         $this->institutionId = $institutionId;
+        $this->assignSections = $assignSections;
         $this->autoCreateSections = $autoCreateSections;
         $this->sectionCapacity = $sectionCapacity;
+        $this->sectionPrefix = $sectionPrefix;
+        $this->autoCreateGroups = $autoCreateGroups;
+        $this->groupPrefix = $groupPrefix;
     }
 
     public function handle(): void
@@ -65,8 +74,12 @@ class ImportStudentsJob implements ShouldQueue
             }
 
             $header = fgetcsv($file);
+            if ($header && str_starts_with($header[0], "\xEF\xBB\xBF")) {
+                $header[0] = str_replace("\xEF\xBB\xBF", '', $header[0]);
+            }
 
             while (($row = fgetcsv($file)) !== false) {
+                if (count($header) !== count($row)) continue;
                 $data = array_combine($header, $row);
 
                 /* -----------------------------------------
@@ -123,11 +136,14 @@ class ImportStudentsJob implements ShouldQueue
                  |-----------------------------------------*/
                 $section = null;
                 $sectionName = trim($data['section'] ?? '');
+                $groupName = trim($data['class_group'] ?? '');
+                $classGroup = null;
 
-                if ($sectionName !== '') {
+                if ($this->assignSections && $sectionName !== '') {
+                    $fullName = trim($this->sectionPrefix . ' ' . $sectionName);
                     $sectionKey = implode('|', [
                         $course->id,
-                        strtolower($sectionName),
+                        strtolower($fullName),
                         $academicYear,
                         $semester
                     ]);
@@ -140,7 +156,7 @@ class ImportStudentsJob implements ShouldQueue
                                 'institution_id' => $this->institutionId,
                                 'department_id'  => $department->id,
                                 'course_id'      => $course->id,
-                                'name'           => $sectionName,
+                                'name'           => $fullName,
                                 'academic_year'  => $academicYear,
                                 'semester'       => $semester,
                             ],
@@ -157,18 +173,23 @@ class ImportStudentsJob implements ShouldQueue
                 /* -----------------------------------------
                  | Class Group
                  |-----------------------------------------*/
-                $classGroup = null;
-                $groupName = trim($data['class_group'] ?? '');
-
                 if ($section && $groupName !== '') {
-                    $classGroup = ClassGroup::firstOrCreate(
-                        [
-                            'institution_id' => $this->institutionId,
-                            'section_id'     => $section->id,
-                            'name'           => $groupName,
-                        ],
-                        ['status' => 1]
-                    );
+                    $fullGroupName = trim($this->groupPrefix . ' ' . $groupName);
+                    if ($this->autoCreateGroups) {
+                        $classGroup = ClassGroup::firstOrCreate(
+                            [
+                                'institution_id' => $this->institutionId,
+                                'section_id'     => $section->id,
+                                'name'           => $fullGroupName,
+                            ],
+                            ['status' => 1]
+                        );
+                    } else {
+                        $classGroup = ClassGroup::where('institution_id', $this->institutionId)
+                            ->where('section_id', $section->id)
+                            ->where('name', $fullGroupName)
+                            ->first();
+                    }
                 }
 
                 /* -----------------------------------------
