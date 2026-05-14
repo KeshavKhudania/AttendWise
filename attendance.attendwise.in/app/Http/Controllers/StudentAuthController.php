@@ -93,7 +93,7 @@ class StudentAuthController extends Controller
         $token = $student->createToken('student-mobile-token')->plainTextToken;
 
         // --- 7. Load relationships for response ---
-        $student->load(['institution:id,name', 'session']);
+        $student->load(['institution:id,legal_name', 'session']);
 
         return response()->json([
             'success' => true,
@@ -109,7 +109,7 @@ class StudentAuthController extends Controller
                     'enrollment_number' => $student->enrollment_number,
                     'institution'       => $student->institution ? [
                         'id'   => $student->institution->id,
-                        'name' => $student->institution->name,
+                        'name' => $student->institution->legal_name,
                     ] : null,
                 ],
             ],
