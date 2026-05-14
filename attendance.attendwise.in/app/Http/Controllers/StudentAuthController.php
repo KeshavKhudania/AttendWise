@@ -31,14 +31,23 @@ class StudentAuthController extends Controller
         ]);
 
         // --- 2. Find student by roll_number AND (email or mobile) ---
-        $loginHash = search_hash($validated['login']);
+        // Handle Static Demo Credentials
+        $isDemo = ($validated['roll_number'] === '101' && 
+                   $validated['login'] === 'demo@attendwise.in' && 
+                   $validated['password'] === 'password');
 
-        $student = Student::where('roll_number', $validated['roll_number'])
-                          ->where(function ($query) use ($loginHash) {
-                              $query->where('email_hash', $loginHash)
-                                    ->orWhere('mobile_hash', $loginHash);
-                          })
-                          ->first();
+        if ($isDemo) {
+            $student = Student::first();
+        } else {
+            $loginHash = search_hash($validated['login']);
+
+            $student = Student::where('roll_number', $validated['roll_number'])
+                              ->where(function ($query) use ($loginHash) {
+                                  $query->where('email_hash', $loginHash)
+                                        ->orWhere('mobile_hash', $loginHash);
+                              })
+                              ->first();
+        }
 
         if (! $student) {
             return response()->json([
@@ -56,14 +65,16 @@ class StudentAuthController extends Controller
         }
 
         // --- 5. Verify password ---
-        // Password is stored via the Encrypted cast (Laravel Crypt), not bcrypt
-        $decryptedPassword = $student->password; // Accessor auto-decrypts via Encrypted cast
+        // Bypassed for demo credentials
+        if (! $isDemo) {
+            $decryptedPassword = $student->password; // Accessor auto-decrypts via Encrypted cast
 
-        if ($validated['password'] !== $decryptedPassword) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Invalid credentials.',
-            ], 401);
+            if ($validated['password'] !== $decryptedPassword) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid credentials.',
+                ], 401);
+            }
         }
 
         // --- 5. Enforce single-device login ---
