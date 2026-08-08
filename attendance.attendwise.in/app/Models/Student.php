@@ -51,6 +51,24 @@ class Student extends Authenticatable
     ];
 
     /**
+     * Disable remember_token DB column updates.
+     */
+    public function getRememberToken()
+    {
+        return null;
+    }
+
+    public function setRememberToken($value)
+    {
+        // No-op since institution_students table does not store remember_token column
+    }
+
+    public function getRememberTokenName()
+    {
+        return '';
+    }
+
+    /**
      * Enforce single device login by deleting all other sessions/tokens.
      */
     public function enforceSingleDeviceLogin(string $deviceId, string $fcmToken = null)

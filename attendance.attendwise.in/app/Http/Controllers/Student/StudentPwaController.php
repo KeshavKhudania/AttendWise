@@ -95,7 +95,7 @@ class StudentPwaController extends Controller
         session(['student_device_id' => $deviceId]);
 
         // 5. Authenticate Web Guard
-        Auth::guard('student')->login($student, true);
+        Auth::guard('student')->login($student);
 
         if ($request->wantsJson()) {
             return response()->json([
