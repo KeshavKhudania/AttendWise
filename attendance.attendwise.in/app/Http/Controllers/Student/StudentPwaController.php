@@ -227,12 +227,51 @@ class StudentPwaController extends Controller
             return response()->json(['success' => false, 'message' => 'QR Code has expired. Please wait for the screen to refresh.'], 403);
         }
 
-        $session = AttendanceSession::with(['schedule.subject', 'faculty'])
+        $session = AttendanceSession::with(['schedule.subject', 'schedule.classroom', 'faculty'])
             ->where('uuid', $sessionUuid)
             ->first();
 
         if (!$session || $session->status !== 'active') {
             return response()->json(['success' => false, 'message' => 'Attendance session is closed or inactive.'], 404);
+        }
+
+        // --- Geolocation Security Verification ---
+        $classroom = $session->schedule->classroom ?? null;
+        if ($classroom && $classroom->latitude && $classroom->longitude) {
+            $studentLat = $validated['latitude'] ?? null;
+            $studentLng = $validated['longitude'] ?? null;
+
+            if (!$studentLat || !$studentLng) {
+                return response()->json([
+                    'success' => false, 
+                    'message' => 'GPS location is required for this class. Please enable location permissions.'
+                ], 403);
+            }
+
+            // Haversine Formula for distance in meters
+            $earthRadius = 6371000; 
+            $latFrom = deg2rad($classroom->latitude);
+            $lonFrom = deg2rad($classroom->longitude);
+            $latTo = deg2rad($studentLat);
+            $lonTo = deg2rad($studentLng);
+
+            $latDelta = $latTo - $latFrom;
+            $lonDelta = $lonTo - $lonFrom;
+
+            $a = sin($latDelta / 2) * sin($latDelta / 2) +
+                 cos($latFrom) * cos($latTo) *
+                 sin($lonDelta / 2) * sin($lonDelta / 2);
+            $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+            $distance = $earthRadius * $c;
+
+            $allowedRadius = 50; // 50 meters strict limit
+
+            if ($distance > $allowedRadius) {
+                return response()->json([
+                    'success' => false, 
+                    'message' => 'You are ' . round($distance) . ' meters away from the classroom. You must be within ' . $allowedRadius . ' meters to mark attendance.'
+                ], 403);
+            }
         }
 
         // Check if attendance already marked
