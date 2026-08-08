@@ -1,17 +1,18 @@
-const CACHE_NAME = 'attendwise-student-v1';
+const CACHE_NAME = 'attendwise-student-v2';
 const STATIC_ASSETS = [
-  '/student/login',
-  '/assets/images/icon-192.png',
-  '/assets/images/icon-512.png',
-  '/manifest.json'
+  'student/login',
+  'manifest.json',
+  'assets/images/logo.png'
 ];
 
-// Install Event - Pre-cache core shell
+// Install Event - Pre-cache core shell safely
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       console.log('[PWA SW] Pre-caching static assets');
-      return cache.addAll(STATIC_ASSETS);
+      return Promise.allSettled(
+        STATIC_ASSETS.map((asset) => cache.add(asset).catch(err => console.warn('[PWA SW] Optional asset cache failed:', asset, err)))
+      );
     }).then(() => self.skipWaiting())
   );
 });
@@ -44,9 +45,10 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       fetch(event.request)
         .then((response) => {
-          // Store copy in cache
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+          if (response && response.status === 200) {
+            const copy = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+          }
           return response;
         })
         .catch(() => {
@@ -54,8 +56,7 @@ self.addEventListener('fetch', (event) => {
             if (cachedResponse) {
               return cachedResponse;
             }
-            // Return cached fallback page or login
-            return caches.match('/student/login');
+            return caches.match('student/login');
           });
         })
     );
@@ -71,7 +72,7 @@ self.addEventListener('fetch', (event) => {
         }
         return networkResponse;
       }).catch(() => {
-        // Suppress network errors for offline fallback
+        // Suppress network errors for offline assets
       });
 
       return cachedResponse || fetchPromise;

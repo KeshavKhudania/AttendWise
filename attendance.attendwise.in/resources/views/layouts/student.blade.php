@@ -6,13 +6,15 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'AttendWise Student Portal')</title>
 
-    <!-- PWA Web App Meta Tags -->
-    <link rel="manifest" href="/manifest.json">
+    <!-- PWA Web App Meta Tags & App Icons -->
+    <link rel="manifest" href="{{ asset('manifest.json') }}">
+    <link rel="icon" type="image/png" href="{{ asset('assets/images/logo.png') }}">
+    <link rel="shortcut icon" href="{{ asset('favicon.ico') }}">
     <meta name="theme-color" content="#0f172a">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="AttendWise">
-    <link rel="apple-touch-icon" href="/assets/images/icon-192.png">
+    <link rel="apple-touch-icon" href="{{ asset('assets/images/icon-192.png') }}">
 
     <!-- Fonts & Icons -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -25,17 +27,17 @@
 
     <style>
         :root {
-            --bg-dark: #090d16;
-            --card-bg: rgba(26, 34, 52, 0.75);
-            --card-border: rgba(255, 255, 255, 0.08);
-            --accent-primary: #6366f1;
-            --accent-glow: rgba(99, 102, 241, 0.35);
-            --accent-gradient: linear-gradient(135deg, #6366f1 0%, #4f46e5 50%, #3b82f6 100%);
+            --bg-dark: #f8fafc;
+            --card-bg: #ffffff;
+            --card-border: rgba(226, 232, 240, 0.9);
+            --accent-primary: #4f46e5;
+            --accent-glow: rgba(79, 70, 229, 0.2);
+            --accent-gradient: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
             --success-gradient: linear-gradient(135deg, #10b981 0%, #059669 100%);
             --danger-gradient: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
             --warning-gradient: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
             --nav-height: 72px;
         }
 
@@ -56,8 +58,8 @@
             flex-direction: column;
             overflow-x: hidden;
             background-image: 
-                radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.15) 0%, transparent 40%),
-                radial-gradient(circle at 90% 80%, rgba(14, 165, 233, 0.12) 0%, transparent 40%);
+                radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(14, 165, 233, 0.08) 0%, transparent 40%);
             background-attachment: fixed;
             padding-bottom: calc(var(--nav-height) + 20px);
         }
@@ -67,10 +69,10 @@
             position: sticky;
             top: 0;
             z-index: 100;
-            background: rgba(9, 13, 22, 0.85);
+            background: rgba(255, 255, 255, 0.88);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
-            border-bottom: 1px solid var(--card-border);
+            border-bottom: 1px solid #e2e8f0;
             padding: 14px 20px;
             display: flex;
             align-items: center;
@@ -82,7 +84,7 @@
             align-items: center;
             gap: 10px;
             text-decoration: none;
-            color: #fff;
+            color: #0f172a;
         }
 
         .brand-icon {
@@ -101,16 +103,16 @@
             font-weight: 800;
             font-size: 1.15rem;
             letter-spacing: -0.5px;
-            background: linear-gradient(135deg, #fff 0%, #cbd5e1 100%);
+            background: linear-gradient(135deg, #0f172a 0%, #334155 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
 
         .offline-badge {
             display: none;
-            background: rgba(239, 68, 68, 0.2);
-            color: #fca5a5;
-            border: 1px solid rgba(239, 68, 68, 0.4);
+            background: #fef2f2;
+            color: #ef4444;
+            border: 1px solid #fca5a5;
             padding: 4px 10px;
             border-radius: 20px;
             font-size: 0.75rem;
@@ -127,7 +129,7 @@
             flex: 1;
         }
 
-        /* Glassmorphism Cards */
+        /* Light Cards */
         .glass-card {
             background: var(--card-bg);
             backdrop-filter: blur(16px);
@@ -136,15 +138,15 @@
             border-radius: 20px;
             padding: 20px;
             margin-bottom: 18px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02);
             transition: transform 0.2s ease, border-color 0.2s ease;
         }
 
         /* PWA Install Banner */
         #pwaInstallBanner {
             display: none;
-            background: linear-gradient(135deg, rgba(99, 102, 241, 0.25) 0%, rgba(14, 165, 233, 0.25) 100%);
-            border: 1px solid rgba(99, 102, 241, 0.4);
+            background: linear-gradient(135deg, rgba(238, 242, 255, 1) 0%, rgba(224, 242, 254, 1) 100%);
+            border: 1px solid rgba(99, 102, 241, 0.3);
             border-radius: 16px;
             padding: 14px 16px;
             margin-bottom: 16px;
@@ -174,10 +176,10 @@
             left: 0;
             right: 0;
             height: var(--nav-height);
-            background: rgba(15, 23, 42, 0.92);
+            background: rgba(255, 255, 255, 0.94);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
-            border-top: 1px solid var(--card-border);
+            border-top: 1px solid #e2e8f0;
             display: flex;
             align-items: center;
             justify-content: space-around;
@@ -186,6 +188,7 @@
             margin: 0 auto;
             border-top-left-radius: 24px;
             border-top-right-radius: 24px;
+            box-shadow: 0 -8px 25px rgba(0, 0, 0, 0.06);
             padding-bottom: env(safe-area-inset-bottom, 0px);
         }
 
@@ -210,12 +213,12 @@
         }
 
         .nav-item.active {
-            color: #818cf8;
+            color: #4f46e5;
         }
 
         .nav-item.active i {
             transform: translateY(-2px);
-            color: #818cf8;
+            color: #4f46e5;
         }
 
         /* Floating Scanner Nav Action Button */
@@ -231,7 +234,7 @@
             font-size: 1.5rem;
             box-shadow: 0 8px 24px var(--accent-glow);
             margin-top: -30px;
-            border: 4px solid var(--bg-dark);
+            border: 4px solid #f8fafc;
             text-decoration: none;
             transition: transform 0.2s ease;
             animation: pulse-glow 2s infinite;
@@ -315,9 +318,8 @@
 
     <!-- Top Bar -->
     <header class="app-topbar">
-        <a href="{{ route('student.dashboard') }}" class="brand-logo">
-            <div class="brand-icon"><i class="fa-solid fa-qrcode"></i></div>
-            <span class="brand-title">AttendWise</span>
+        <a href="{{ route('student.dashboard') }}" class="brand-logo" style="display: flex; align-items: center; gap: 10px;">
+            <img src="{{ asset('assets/images/logo.png') }}" alt="AttendWise Logo" style="height: 32px; width: auto; max-width: 140px; object-fit: contain;">
         </a>
         <div class="offline-badge" id="offlineBadge">
             <i class="fa-solid fa-wifi-slash"></i> Offline Mode
@@ -338,8 +340,10 @@
     <main class="container">
         <!-- PWA Installation Banner -->
         <div id="pwaInstallBanner">
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <i class="fa-solid fa-mobile-screen-button" style="font-size: 1.4rem; color: #818cf8;"></i>
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="width: 40px; height: 40px; border-radius: 10px; background: #ffffff; display: flex; align-items: center; justify-content: center; padding: 4px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); flex-shrink: 0;">
+                    <img src="{{ asset('assets/images/logo.png') }}" alt="AttendWise Logo" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                </div>
                 <div>
                     <div style="font-weight: 700; font-size: 0.88rem; color: #fff;">Install AttendWise PWA</div>
                     <div style="font-size: 0.75rem; color: var(--text-muted);">Add to home screen for instant access</div>
@@ -383,7 +387,7 @@
         // --- 1. Service Worker Registration ---
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js')
+                navigator.serviceWorker.register("{{ asset('sw.js') }}")
                     .then(reg => console.log('[PWA] Service Worker registered:', reg.scope))
                     .catch(err => console.error('[PWA] Service Worker registration failed:', err));
             });

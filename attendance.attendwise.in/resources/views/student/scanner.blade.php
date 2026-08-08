@@ -11,8 +11,8 @@
         border-radius: 24px;
         overflow: hidden;
         background: #000;
-        border: 2px solid rgba(99, 102, 241, 0.4);
-        box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+        border: 2px solid rgba(79, 70, 229, 0.4);
+        box-shadow: 0 12px 40px rgba(0,0,0,0.15);
     }
 
     #qrReader {
@@ -44,10 +44,10 @@
     .scan-target {
         width: 250px;
         height: 250px;
-        border: 2px solid rgba(255, 255, 255, 0.3);
+        border: 2px solid rgba(255, 255, 255, 0.4);
         border-radius: 24px;
         position: relative;
-        box-shadow: 0 0 0 9999px rgba(9, 13, 22, 0.65);
+        box-shadow: 0 0 0 9999px rgba(15, 23, 42, 0.55);
     }
 
     /* Corner Markers */
@@ -56,7 +56,7 @@
         position: absolute;
         width: 30px;
         height: 30px;
-        border-color: #6366f1;
+        border-color: #4f46e5;
         border-style: solid;
     }
     .scan-target::before { top: -2px; left: -2px; border-width: 4px 0 0 4px; border-top-left-radius: 18px; }
@@ -64,21 +64,21 @@
 
     .corner-bottom-left {
         position: absolute; bottom: -2px; left: -2px; width: 30px; height: 30px;
-        border-color: #6366f1; border-style: solid; border-width: 0 0 4px 4px; border-bottom-left-radius: 18px;
+        border-color: #4f46e5; border-style: solid; border-width: 0 0 4px 4px; border-bottom-left-radius: 18px;
     }
     .corner-bottom-right {
         position: absolute; bottom: -2px; right: -2px; width: 30px; height: 30px;
-        border-color: #6366f1; border-style: solid; border-width: 0 4px 4px 0; border-bottom-right-radius: 18px;
+        border-color: #4f46e5; border-style: solid; border-width: 0 4px 4px 0; border-bottom-right-radius: 18px;
     }
 
     /* Laser Line Scan Animation */
     .laser-line {
         width: 100%;
         height: 3px;
-        background: linear-gradient(90deg, transparent, #818cf8, #38bdf8, transparent);
+        background: linear-gradient(90deg, transparent, #4f46e5, #38bdf8, transparent);
         position: absolute;
         top: 0;
-        box-shadow: 0 0 15px #818cf8;
+        box-shadow: 0 0 15px #4f46e5;
         animation: scan-laser 2.2s ease-in-out infinite alternate;
     }
 
@@ -100,28 +100,30 @@
         width: 50px;
         height: 50px;
         border-radius: 16px;
-        background: rgba(26, 34, 52, 0.8);
-        border: 1px solid var(--card-border);
-        color: #fff;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        color: #0f172a;
         font-size: 1.2rem;
         display: flex;
         align-items: center;
         justify-content: center;
         cursor: pointer;
         transition: all 0.2s ease;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
     }
 
     .btn-icon-control:active {
         transform: scale(0.92);
         background: var(--accent-gradient);
+        color: #ffffff;
     }
 
     /* Result Modal Backdrop */
     .result-modal-backdrop {
         position: fixed;
         top: 0; left: 0; right: 0; bottom: 0;
-        background: rgba(9, 13, 22, 0.85);
-        backdrop-filter: blur(20px);
+        background: rgba(15, 23, 42, 0.6);
+        backdrop-filter: blur(12px);
         z-index: 2500;
         display: none;
         align-items: center;
@@ -130,14 +132,14 @@
     }
 
     .result-modal-card {
-        background: var(--card-bg);
-        border: 1px solid var(--card-border);
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
         border-radius: 24px;
         padding: 28px 24px;
         width: 100%;
         max-width: 420px;
         text-align: center;
-        box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+        box-shadow: 0 20px 50px rgba(0,0,0,0.15);
         animation: modalPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
 
@@ -151,8 +153,8 @@
 @section('content')
 <div style="margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
     <div>
-        <h3 style="font-weight: 800; font-size: 1.2rem; color: #fff; display: flex; align-items: center; gap: 8px;">
-            <i class="fa-solid fa-qrcode" style="color: #818cf8;"></i> Live Camera Scanner
+        <h3 style="font-weight: 800; font-size: 1.2rem; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-qrcode" style="color: #4f46e5;"></i> Live Camera Scanner
         </h3>
         <p style="font-size: 0.78rem; color: var(--text-muted);">Align the faculty QR code inside the box frame</p>
     </div>
@@ -170,8 +172,8 @@
             <div class="corner-bottom-right"></div>
             <div class="laser-line"></div>
         </div>
-        <div style="margin-top: 18px; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(10px); padding: 6px 14px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; color: #cbd5e1; display: flex; align-items: center; gap: 6px;">
-            <i class="fa-solid fa-location-crosshairs" style="color: #38bdf8;" id="gpsIcon"></i>
+        <div style="margin-top: 18px; background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); padding: 6px 14px; border-radius: 20px; font-size: 0.78rem; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+            <i class="fa-solid fa-location-crosshairs" style="color: #0284c7;" id="gpsIcon"></i>
             <span id="gpsStatusText">Acquiring GPS Location...</span>
         </div>
     </div>
@@ -191,15 +193,15 @@
 </div>
 
 <!-- Manual QR Payload Input Modal (Fallback / Demo) -->
-<div class="glass-card" id="manualInputCard" style="display: none; margin-top: 20px; border: 1px dashed rgba(99, 102, 241, 0.4);">
-    <h4 style="font-size: 0.95rem; font-weight: 700; color: #fff; margin-bottom: 8px;">Manual QR Token Entry</h4>
+<div class="glass-card" id="manualInputCard" style="display: none; margin-top: 20px; border: 1px dashed #c7d2fe;">
+    <h4 style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin-bottom: 8px;">Manual QR Token Entry</h4>
     <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 12px;">If camera access is unavailable or testing without camera, paste the QR payload string (e.g. <code>uuid|timestamp</code>):</p>
     
-    <input type="text" id="manualPayloadInput" placeholder="uuid|timestamp" style="width: 100%; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--card-border); border-radius: 12px; padding: 10px 12px; color: #fff; font-size: 0.88rem; outline: none; margin-bottom: 12px;">
+    <input type="text" id="manualPayloadInput" placeholder="uuid|timestamp" style="width: 100%; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px 12px; color: #0f172a; font-size: 0.88rem; outline: none; margin-bottom: 12px;">
     
     <div style="display: flex; gap: 10px;">
         <button class="btn-primary" onclick="submitManualPayload()" style="padding: 10px; font-size: 0.88rem;">Submit Code</button>
-        <button style="background: rgba(255,255,255,0.1); border: 1px solid var(--card-border); color: #fff; padding: 10px; border-radius: 12px; font-size: 0.88rem; cursor: pointer;" onclick="document.getElementById('manualInputCard').style.display='none'">Close</button>
+        <button style="background: #f1f5f9; border: 1px solid #e2e8f0; color: #475569; padding: 10px; border-radius: 12px; font-size: 0.88rem; cursor: pointer; font-weight: 600;" onclick="document.getElementById('manualInputCard').style.display='none'">Close</button>
     </div>
 </div>
 
@@ -208,13 +210,13 @@
     <div class="result-modal-card">
         <div id="modalStatusIcon" style="width: 72px; height: 72px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px auto; font-size: 2.2rem;"></div>
 
-        <h3 id="modalTitle" style="font-size: 1.35rem; font-weight: 800; color: #fff; margin-bottom: 6px;"></h3>
+        <h3 id="modalTitle" style="font-size: 1.35rem; font-weight: 800; color: #0f172a; margin-bottom: 6px;"></h3>
         <p id="modalMessage" style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 20px;"></p>
 
-        <div id="modalDetailsCard" style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--card-border); border-radius: 16px; padding: 14px; margin-bottom: 20px; text-align: left; display: none;">
+        <div id="modalDetailsCard" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 14px; margin-bottom: 20px; text-align: left; display: none;">
             <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Class Details</div>
-            <div id="modalSubject" style="font-size: 1rem; font-weight: 800; color: #fff; margin-top: 4px;"></div>
-            <div style="font-size: 0.82rem; color: #818cf8; margin-top: 4px; display: flex; align-items: center; justify-content: space-between;">
+            <div id="modalSubject" style="font-size: 1rem; font-weight: 800; color: #0f172a; margin-top: 4px;"></div>
+            <div style="font-size: 0.82rem; color: #4f46e5; font-weight: 600; margin-top: 4px; display: flex; align-items: center; justify-content: space-between;">
                 <span id="modalFaculty"></span>
                 <span id="modalTime"></span>
             </div>
@@ -333,7 +335,7 @@
             torchOn = !torchOn;
             mediaTrack.applyConstraints({ advanced: [{ torch: torchOn }] })
                 .then(() => {
-                    document.getElementById('toggleFlashBtn').style.color = torchOn ? '#f59e0b' : '#fff';
+                    document.getElementById('toggleFlashBtn').style.color = torchOn ? '#f59e0b' : '#0f172a';
                 });
         } else {
             showToast('Flashlight unsupported by browser', 'error');
@@ -416,8 +418,8 @@
         document.getElementById('modalMessage').innerText = msg;
 
         if (type === 'success') {
-            iconContainer.style.background = 'rgba(16, 185, 129, 0.2)';
-            iconContainer.style.color = '#34d399';
+            iconContainer.style.background = '#ecfdf5';
+            iconContainer.style.color = '#059669';
             iconContainer.innerHTML = '<i class="fa-solid fa-circle-check"></i>';
 
             if (data && data.subject) {
@@ -427,8 +429,8 @@
                 document.getElementById('modalTime').innerText = data.time || '';
             }
         } else {
-            iconContainer.style.background = 'rgba(239, 68, 68, 0.2)';
-            iconContainer.style.color = '#fca5a5';
+            iconContainer.style.background = '#fef2f2';
+            iconContainer.style.color = '#dc2626';
             iconContainer.innerHTML = '<i class="fa-solid fa-circle-xmark"></i>';
             document.getElementById('modalDetailsCard').style.display = 'none';
         }

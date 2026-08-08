@@ -199,9 +199,9 @@
     <div class="light-login-card">
         <div class="light-glow-header"></div>
 
-        <!-- Brand Icon Badge -->
-        <div style="width: 68px; height: 68px; border-radius: 20px; background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%); display: flex; align-items: center; justify-content: center; margin: 0 auto 16px auto; font-size: 2.1rem; color: #ffffff; box-shadow: 0 10px 25px rgba(79, 70, 229, 0.3);">
-            <i class="fa-solid fa-graduation-cap"></i>
+        <!-- Brand Icon / App Logo Badge -->
+        <div style="width: 72px; height: 72px; border-radius: 22px; background: #ffffff; border: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px auto; padding: 10px; box-shadow: 0 10px 25px rgba(79, 70, 229, 0.15);">
+            <img src="{{ asset('assets/images/logo.png') }}" alt="AttendWise Logo" style="max-width: 100%; max-height: 100%; object-fit: contain;">
         </div>
 
         <div style="text-align: center; margin-bottom: 24px;">
