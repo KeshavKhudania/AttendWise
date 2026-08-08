@@ -1,0 +1,25 @@
+{
+  "name": "AttendWise Student Portal",
+  "short_name": "AttendWise",
+  "description": "Mark attendance easily using dynamic QR codes and location verification.",
+  "start_url": "/student/dashboard",
+  "scope": "/student/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f172a",
+  "theme_color": "#4f46e5",
+  "icons": [
+    {
+      "src": "/assets/images/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/images/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

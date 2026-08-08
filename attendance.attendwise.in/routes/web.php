@@ -3,7 +3,7 @@
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('welcome');
+    return redirect()->route('student.login');
 });
 
 // Faculty Routes
@@ -34,8 +34,27 @@ Route::prefix('faculty')->name('faculty.')->group(function () {
     });
 });
 
-// Student App APIs
+// Student PWA Routes
+use App\Http\Controllers\Student\StudentPwaController;
+
+Route::prefix('student')->name('student.')->group(function () {
+    Route::get('login', [StudentPwaController::class, 'showLoginForm'])->name('login');
+    Route::post('login', [StudentPwaController::class, 'login'])->name('login.post');
+    Route::post('logout', [StudentPwaController::class, 'logout'])->name('logout');
+
+    Route::middleware(['auth:student'])->group(function () {
+        Route::get('dashboard', [StudentPwaController::class, 'dashboard'])->name('dashboard');
+        Route::get('scanner', [StudentPwaController::class, 'scanner'])->name('scanner');
+        Route::post('attendance/mark', [StudentPwaController::class, 'markAttendance'])->name('attendance.mark');
+        Route::get('history', [StudentPwaController::class, 'history'])->name('history');
+        Route::get('timetable', [StudentPwaController::class, 'timetable'])->name('timetable');
+        Route::get('profile', [StudentPwaController::class, 'profile'])->name('profile');
+    });
+});
+
+// Student App APIs (Legacy & PWA AJAX)
 Route::prefix('api/v1')->group(function() {
     Route::post('attendance/mark-qr', [DashboardController::class, 'markAttendanceByQR']);
 });
+
 
