@@ -221,8 +221,12 @@
                 <span id="modalTime"></span>
             </div>
         </div>
+        
+        <div id="modalWaitMessage" style="display: none; font-size: 0.85rem; color: #f59e0b; margin-bottom: 20px; font-weight: 600;">
+            <i class="fa-solid fa-spinner fa-spin"></i> Waiting for faculty to end the session...
+        </div>
 
-        <button class="btn-primary" onclick="closeResultModal()">Done & Return to Dashboard</button>
+        <button id="modalCloseBtn" class="btn-primary" onclick="closeResultModal()">Done & Return to Dashboard</button>
     </div>
 </div>
 @endsection
@@ -380,6 +384,9 @@
 
             if (data.success) {
                 showModal('Attendance Marked!', data.message, 'success', data);
+                if (data.session_uuid) {
+                    listenForSessionEnd(data.session_uuid);
+                }
             } else {
                 showModal('Attendance Failed', data.message || 'Invalid or expired QR code.', 'error');
             }
@@ -436,6 +443,28 @@
         }
 
         modal.style.display = 'flex';
+    }
+
+    function listenForSessionEnd(uuid) {
+        if (!window.Echo) return;
+        
+        // Hide standard close button, show wait message
+        document.getElementById('modalCloseBtn').style.display = 'none';
+        document.getElementById('modalWaitMessage').style.display = 'block';
+
+        window.Echo.join('attendance.session.' + uuid)
+            .listen('.LiveAttendanceAction', (e) => {
+                if (e.action === 'session_ended') {
+                    // Turn wait message green and redirect
+                    const waitMsg = document.getElementById('modalWaitMessage');
+                    waitMsg.style.color = '#10b981';
+                    waitMsg.innerHTML = '<i class="fa-solid fa-check"></i> Session closed by faculty. Redirecting...';
+                    
+                    setTimeout(() => {
+                        window.location.href = "{{ route('student.dashboard') }}";
+                    }, 2000);
+                }
+            });
     }
 
     function closeResultModal() {

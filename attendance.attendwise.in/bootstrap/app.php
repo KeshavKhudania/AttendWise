@@ -14,8 +14,18 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->redirectTo(
-            guests: '/login',
-            users: '/faculty/dashboard'
+            guests: function (\Illuminate\Http\Request $request) {
+                if ($request->is('faculty*')) {
+                    return route('faculty.login');
+                }
+                return route('student.login');
+            },
+            users: function (\Illuminate\Http\Request $request) {
+                if ($request->is('faculty*')) {
+                    return route('faculty.dashboard');
+                }
+                return route('student.dashboard');
+            }
         );
         
         $middleware->validateCsrfTokens(except: [
@@ -27,5 +37,18 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        $exceptions->render(function (\Illuminate\Auth\AuthenticationException $e, \Illuminate\Http\Request $request) {
+            if ($request->expectsJson()) {
+                $loginUrl = $request->is('faculty*') ? route('faculty.login') : route('student.login');
+                return response()->json(['message' => 'Session expired. Please login again.', 'redirect' => $loginUrl], 401);
+            }
+        });
+
+        $exceptions->render(function (\Illuminate\Session\TokenMismatchException $e, \Illuminate\Http\Request $request) {
+            $loginUrl = $request->is('faculty*') ? route('faculty.login') : route('student.login');
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Session expired. Please login again.', 'redirect' => $loginUrl], 419);
+            }
+            return redirect()->to($loginUrl)->with('error', 'Session expired. Please login again.');
+        });
     })->create();

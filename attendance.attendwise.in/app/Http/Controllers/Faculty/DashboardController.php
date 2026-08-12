@@ -73,11 +73,12 @@ class DashboardController extends Controller
         $selectedSchedule = null;
         $students = collect();
         $existingRecords = collect();
+        $existingSession = null;
         
         if ($scheduleId) {
             $selectedSchedule = Schedule::with(['subject', 'classroom.block', 'section'])
                 ->where('faculty_id', $faculty->id)
-                ->find($scheduleId);
+                ->findOrFail($scheduleId);
                 
             if ($selectedSchedule) {
                 $students = Student::where('institution_id', $faculty->institution_id)
@@ -92,12 +93,13 @@ class DashboardController extends Controller
                     ->orderBy('roll_number')
                     ->get();
 
-                $session = AttendanceSession::where('schedule_id', $selectedSchedule->id)
+                $existingSession = AttendanceSession::where('schedule_id', $selectedSchedule->id)
                     ->where('date', Carbon::today()->format('Y-m-d'))
+                    ->where('status', '!=', 'cancelled')
                     ->first();
 
-                if ($session) {
-                    $existingRecords = AttendanceRecord::where('attendance_session_id', $session->id)
+                if ($existingSession) {
+                    $existingRecords = AttendanceRecord::where('attendance_session_id', $existingSession->id)
                         ->get()
                         ->pluck('status', 'student_id');
                 }
@@ -110,7 +112,7 @@ class DashboardController extends Controller
             ->orderBy('start_time')
             ->get();
             
-        return view('faculty.attendance', compact('faculty', 'selectedSchedule', 'students', 'upcomingLectures', 'existingRecords'));
+        return view('faculty.attendance', compact('faculty', 'selectedSchedule', 'students', 'upcomingLectures', 'existingRecords', 'existingSession'));
     }
 
     public function submitAttendance(Request $request)
@@ -122,7 +124,7 @@ class DashboardController extends Controller
         ]);
 
         $faculty = Auth::guard('faculty')->user();
-        $schedule = Schedule::findOrFail($request->schedule_id);
+        $schedule = Schedule::where('faculty_id', $faculty->id)->findOrFail($request->schedule_id);
         $date = Carbon::today()->format('Y-m-d');
 
         DB::beginTransaction();
@@ -168,7 +170,7 @@ class DashboardController extends Controller
     {
         $faculty = Auth::guard('faculty')->user();
         $scheduleId = $request->schedule_id;
-        $schedule = Schedule::findOrFail($scheduleId);
+        $schedule = Schedule::where('faculty_id', $faculty->id)->findOrFail($scheduleId);
 
         $session = AttendanceSession::updateOrCreate(
             [
@@ -180,6 +182,7 @@ class DashboardController extends Controller
                 'faculty_id' => $faculty->id,
                 'start_time' => $schedule->start_time,
                 'status' => 'active',
+                'is_geofencing' => 1,
             ]
         );
 
@@ -192,8 +195,11 @@ class DashboardController extends Controller
 
     public function qrRefresh(Request $request)
     {
+        $faculty = Auth::guard('faculty')->user();
         $sessionUuid = $request->uuid;
-        $session = AttendanceSession::where('uuid', $sessionUuid)->firstOrFail();
+        $session = AttendanceSession::where('uuid', $sessionUuid)
+            ->where('faculty_id', $faculty->id)
+            ->firstOrFail();
         
         $timestamp = now()->timestamp;
         $payload = $sessionUuid . '|' . $timestamp;
@@ -232,7 +238,7 @@ class DashboardController extends Controller
             return response()->json(['success' => false, 'message' => 'Student ID required'], 400);
         }
 
-        AttendanceRecord::updateOrCreate(
+        $record = AttendanceRecord::updateOrCreate(
             [
                 'institution_id' => $session->institution_id,
                 'student_id' => $studentId,
@@ -247,13 +253,21 @@ class DashboardController extends Controller
             ]
         );
 
+        event(new \App\Events\LiveAttendanceAction($session->uuid, 'student_joined', [
+            'student_id' => $studentId,
+            'status' => 'present'
+        ]));
+
         return response()->json(['success' => true, 'message' => 'Attendance marked successfully']);
     }
 
     public function getSessionStudents(Request $request)
     {
+        $faculty = Auth::guard('faculty')->user();
         $sessionUuid = $request->uuid;
-        $session = AttendanceSession::where('uuid', $sessionUuid)->firstOrFail();
+        $session = AttendanceSession::where('uuid', $sessionUuid)
+            ->where('faculty_id', $faculty->id)
+            ->firstOrFail();
         
         $records = AttendanceRecord::where('attendance_session_id', $session->id)
             ->where('status', 'present')
@@ -263,6 +277,196 @@ class DashboardController extends Controller
         return response()->json([
             'success' => true,
             'present_student_ids' => $records
+        ]);
+    }
+
+    public function qrSessionClose(Request $request)
+    {
+        $faculty = Auth::guard('faculty')->user();
+        $sessionUuid = $request->uuid;
+        
+        $session = AttendanceSession::where('uuid', $sessionUuid)
+            ->where('faculty_id', $faculty->id)
+            ->firstOrFail();
+            
+        $session->update(['status' => 'completed']);
+        
+        event(new \App\Events\LiveAttendanceAction($session->uuid, 'session_ended', []));
+        
+        return response()->json(['success' => true]);
+    }
+
+    public function qrToggleGeofence(Request $request)
+    {
+        $faculty = Auth::guard('faculty')->user();
+        $sessionUuid = $request->uuid;
+        $isGeofencing = $request->input('is_geofencing') ? 1 : 0;
+
+        $session = AttendanceSession::where('uuid', $sessionUuid)
+            ->where('faculty_id', $faculty->id)
+            ->firstOrFail();
+
+        $session->update(['is_geofencing' => $isGeofencing]);
+
+        return response()->json([
+            'success' => true,
+            'is_geofencing' => $session->is_geofencing
+        ]);
+    }
+
+    public function resetAttendance(Request $request)
+    {
+        $faculty = Auth::guard('faculty')->user();
+        $request->validate([
+            'schedule_id' => 'required|exists:institution_schedules,id'
+        ]);
+
+        $schedule = Schedule::where('faculty_id', $faculty->id)->findOrFail($request->schedule_id);
+        $date = Carbon::today()->format('Y-m-d');
+
+        $session = AttendanceSession::where('schedule_id', $schedule->id)
+            ->where('date', $date)
+            ->where('faculty_id', $faculty->id)
+            ->first();
+
+        if ($session) {
+            $session->update(['status' => 'cancelled']);
+            
+            AttendanceRecord::where('attendance_session_id', $session->id)
+                ->update(['status' => 'cancelled', 'remarks' => 'Session Reset/Cancelled by Faculty']);
+                
+            event(new \App\Events\LiveAttendanceAction($session->uuid, 'session_ended', []));
+        }
+
+        return redirect()->route('faculty.attendance', ['schedule' => $schedule->id])->with('success', 'Attendance session has been reset and cancelled.');
+    }
+
+    public function qrMarkStudentByRollNumber(Request $request)
+    {
+        $faculty = Auth::guard('faculty')->user();
+        $sessionUuid = $request->uuid;
+        $rollNumber = trim($request->roll_number ?? '');
+        $ocrText = strtoupper(preg_replace('/[^A-Z0-9]/', '', $request->ocr_text ?? ''));
+
+        if (!$sessionUuid || (!$rollNumber && !$ocrText)) {
+            return response()->json(['success' => false, 'message' => 'Session UUID and Roll Number/OCR Text are required.'], 400);
+        }
+
+        $session = AttendanceSession::where('uuid', $sessionUuid)
+            ->where('faculty_id', $faculty->id)
+            ->first();
+
+        if (!$session || $session->status !== 'active') {
+            return response()->json(['success' => false, 'message' => 'Active session not found.'], 404);
+        }
+
+        $schedule = Schedule::find($session->schedule_id);
+        $student = null;
+
+        if ($rollNumber) {
+            // Exact match via manual entry
+            $student = Student::where('institution_id', $faculty->institution_id)
+                ->whereRaw('LOWER(roll_number) = ?', [strtolower($rollNumber)])
+                ->first();
+        } elseif ($ocrText) {
+            // ANTI-SPOOFING CHECK: Real ID cards contain boilerplate text. Handwritten papers usually only contain the roll number.
+            if (!$rollNumber) { // Only run for automated OCR scans, skip for manual faculty entry
+                if (strlen($ocrText) < 15) {
+                    return response()->json(['success' => false, 'message' => 'Anti-Spoofing: Scan lacks sufficient printed text.'], 400);
+                }
+
+                $securityKeywords = ['ID', 'IDENTITY', 'CARD', 'STUDENT', 'VALID', 'DOB', 'BLOOD', 'GROUP', 'ISSUED', 'CONTACT', 'EMERGENCY', 'UNIVERSITY', 'COLLEGE', 'INSTITUTE', 'SCHOOL', 'ACADEMY', 'COURSE', 'PROGRAM', 'DEPARTMENT', 'SIGNATURE', 'NAME', 'FATHER'];
+                $foundKeywords = 0;
+                foreach ($securityKeywords as $keyword) {
+                    if (strpos($ocrText, $keyword) !== false) {
+                        $foundKeywords++;
+                    }
+                }
+                
+                // Require at least 1 security keyword to prove this is a printed ID card
+                if ($foundKeywords < 1) {
+                    return response()->json(['success' => false, 'message' => 'Anti-Spoofing: Institutional markers missing.'], 400);
+                }
+            }
+
+            // Smart OCR text matching against students in this specific schedule
+            $query = Student::where('institution_id', $faculty->institution_id);
+            if ($schedule) {
+                if ($schedule->section_id) {
+                    $query->where('section_id', $schedule->section_id);
+                } elseif ($schedule->class_group_id) {
+                    $query->where('class_group_id', $schedule->class_group_id);
+                }
+            }
+            $enrolledStudents = $query->get();
+
+            foreach ($enrolledStudents as $enrolled) {
+                $cleanRoll = strtoupper(preg_replace('/[^A-Z0-9]/', '', $enrolled->roll_number));
+                // Ensure roll number is substantial enough to avoid false positives (e.g. at least 3 chars)
+                if (strlen($cleanRoll) >= 3) {
+                    // Check if the clean roll number exists within the cleaned OCR text
+                    // Also handle common OCR mistakes: replacing 'O' with '0', 'I' with '1', 'S' with '5', 'B' with '8', 'Z' with '2'
+                    $ocrMistakes = ['O', 'I', 'S', 'B', 'Z'];
+                    $ocrCorrections = ['0', '1', '5', '8', '2'];
+                    $cleanOcrTextReplaced = str_replace($ocrMistakes, $ocrCorrections, $ocrText);
+                    $cleanRollReplaced = str_replace($ocrMistakes, $ocrCorrections, $cleanRoll);
+
+                    if (strpos($ocrText, $cleanRoll) !== false || strpos($cleanOcrTextReplaced, $cleanRollReplaced) !== false) {
+                        $student = $enrolled;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (!$student) {
+            return response()->json(['success' => false, 'message' => 'Student not found in your class.'], 404);
+        }
+
+        // Check if student belongs to the section/class group of the schedule
+        if ($schedule) {
+            $belongs = false;
+            if ($schedule->section_id && $student->section_id == $schedule->section_id) {
+                $belongs = true;
+            }
+            if ($schedule->class_group_id && $student->class_group_id == $schedule->class_group_id) {
+                $belongs = true;
+            }
+            if (!$schedule->section_id && !$schedule->class_group_id) {
+                $belongs = true;
+            }
+            if (!$belongs) {
+                return response()->json(['success' => false, 'message' => 'Student is not enrolled in this section/class.'], 400);
+            }
+        }
+
+        // Mark them present
+        $record = AttendanceRecord::updateOrCreate(
+            [
+                'institution_id' => $session->institution_id,
+                'student_id' => $student->id,
+                'schedule_id' => $session->schedule_id,
+                'date' => $session->date,
+            ],
+            [
+                'attendance_session_id' => $session->id,
+                'marked_by_faculty_id' => $session->faculty_id,
+                'status' => 'present',
+                'remarks' => 'Marked via OCR Scanner',
+            ]
+        );
+
+        // Broadcast to LiveAttendanceAction so the UI updates in real-time
+        event(new \App\Events\LiveAttendanceAction($session->uuid, 'student_joined', [
+            'student_id' => $student->id,
+            'status' => 'present'
+        ]));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Student ' . $student->name . ' marked present.',
+            'student_id' => $student->id,
+            'roll_number' => $student->roll_number
         ]);
     }
 }

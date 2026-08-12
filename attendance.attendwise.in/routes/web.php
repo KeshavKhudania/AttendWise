@@ -23,11 +23,15 @@ Route::prefix('faculty')->name('faculty.')->group(function () {
         // Attendance routes
         Route::get('attendance/{schedule?}', [DashboardController::class, 'attendance'])->name('attendance');
         Route::post('attendance', [DashboardController::class, 'submitAttendance'])->name('attendance.submit');
+        Route::post('attendance/reset', [DashboardController::class, 'resetAttendance'])->name('attendance.reset');
         
         // QR Attendance AJAX Routes
         Route::post('attendance/qr/init', [DashboardController::class, 'qrSessionInit'])->name('attendance.qr.init');
         Route::post('attendance/qr/refresh', [DashboardController::class, 'qrRefresh'])->name('attendance.qr.refresh');
         Route::get('attendance/qr/students', [DashboardController::class, 'getSessionStudents'])->name('attendance.qr.students');
+        Route::post('attendance/qr/close', [DashboardController::class, 'qrSessionClose'])->name('attendance.qr.close');
+        Route::post('attendance/qr/toggle-geofence', [DashboardController::class, 'qrToggleGeofence'])->name('attendance.qr.toggle_geofence');
+        Route::post('attendance/qr/mark-ocr', [DashboardController::class, 'qrMarkStudentByRollNumber'])->name('attendance.qr.mark_ocr');
         
         Route::get('leave-request', function() { return view('faculty.leave'); })->name('leave');
         Route::get('events', function() { return view('faculty.events'); })->name('events');

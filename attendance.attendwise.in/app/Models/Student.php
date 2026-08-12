@@ -114,4 +114,9 @@ class Student extends Authenticatable
     {
         return $this->belongsTo(Department::class);
     }
+
+    public function section()
+    {
+        return $this->belongsTo(Section::class);
+    }
 }

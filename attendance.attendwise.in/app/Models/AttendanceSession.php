@@ -16,7 +16,8 @@ class AttendanceSession extends Model
         'start_time',
         'end_time',
         'status',
-        'qr_refresh_token'
+        'qr_refresh_token',
+        'is_geofencing'
     ];
 
     protected static function boot()

@@ -313,6 +313,7 @@
         .toast-error { border-left: 4px solid #ef4444; }
     </style>
     @yield('styles')
+    @vite(['resources/js/app.js'])
 </head>
 <body>
 
@@ -454,6 +455,19 @@
                 setTimeout(() => toast.remove(), 300);
             }, 3500);
         }
+
+        // --- 6. Global Session Expiration & Fetch Interceptor ---
+        const originalFetch = window.fetch;
+        window.fetch = async function(...args) {
+            const response = await originalFetch(...args);
+            if (response.status === 401 || response.status === 419) {
+                showToast('Session expired. Redirecting to login...', 'error');
+                setTimeout(() => {
+                    window.location.href = "{{ route('student.login') }}";
+                }, 1000);
+            }
+            return response;
+        };
     </script>
     @yield('scripts')
 </body>

@@ -287,6 +287,7 @@
         }
     </style>
     @yield('styles')
+    @vite(['resources/js/app.js'])
 </head>
 <body>
     <div class="layout">
@@ -407,6 +408,17 @@
             const currentTheme = root.getAttribute('data-theme');
             setTheme(currentTheme === 'dark' ? 'light' : 'dark');
         });
+
+        // Global Session Expiration & Fetch Interceptor
+        const originalFetch = window.fetch;
+        window.fetch = async function(...args) {
+            const response = await originalFetch(...args);
+            if (response.status === 401 || response.status === 419) {
+                window.location.href = "{{ route('faculty.login') }}";
+            }
+            return response;
+        };
     </script>
+    @yield('scripts')
 </body>
 </html>

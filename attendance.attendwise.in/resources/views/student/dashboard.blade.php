@@ -142,6 +142,10 @@
                         <span style="background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; font-size: 0.75rem; font-weight: 700; padding: 6px 12px; border-radius: 20px; display: inline-flex; align-items: center; gap: 4px;">
                             <i class="fa-solid fa-check-circle"></i> Present
                         </span>
+                    @elseif($schedule->attendance_status === 'cancelled' || ($schedule->is_cancelled && !$schedule->is_session_active))
+                        <span style="background: #fef2f2; color: #b91c1c; border: 1px solid #fca5a5; font-size: 0.75rem; font-weight: 700; padding: 6px 12px; border-radius: 20px; display: inline-flex; align-items: center; gap: 4px;">
+                            <i class="fa-solid fa-ban"></i> Cancelled/Suspended
+                        </span>
                     @elseif($schedule->is_session_active)
                         <a href="{{ route('student.scanner') }}" style="background: var(--accent-gradient); color: #fff; text-decoration: none; font-size: 0.78rem; font-weight: 700; padding: 8px 14px; border-radius: 14px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px var(--accent-glow);">
                             <i class="fa-solid fa-qrcode"></i> Scan QR Live!

@@ -148,15 +148,23 @@ class StudentPwaController extends Controller
                     ->where('date', $today)
                     ->where('status', 'active')
                     ->first();
+                    
+                $cancelledSession = AttendanceSession::where('schedule_id', $schedule->id)
+                    ->where('date', $today)
+                    ->where('status', 'cancelled')
+                    ->first();
 
                 $schedule->attendance_status = $record ? $record->status : null;
                 $schedule->is_session_active = (bool) $activeSession;
                 $schedule->active_session_uuid = $activeSession ? $activeSession->uuid : null;
+                $schedule->is_cancelled = (bool) $cancelledSession;
                 return $schedule;
             });
 
         // Attendance Overall Statistics
-        $allRecords = AttendanceRecord::where('student_id', $student->id)->get();
+        $allRecords = AttendanceRecord::where('student_id', $student->id)
+            ->where('status', '!=', 'cancelled')
+            ->get();
         $totalClasses = $allRecords->count();
         $presentCount = $allRecords->where('status', 'present')->count();
         $absentCount  = $allRecords->where('status', 'absent')->count();
@@ -227,17 +235,33 @@ class StudentPwaController extends Controller
             return response()->json(['success' => false, 'message' => 'QR Code has expired. Please wait for the screen to refresh.'], 403);
         }
 
-        $session = AttendanceSession::with(['schedule.subject', 'schedule.classroom', 'faculty'])
+        $session = AttendanceSession::with(['schedule.subject', 'schedule.classroom', 'schedule.section', 'faculty'])
             ->where('uuid', $sessionUuid)
             ->first();
 
+        // 1. Session Status Check: Ensure session is explicitly active (not completed/closed)
         if (!$session || $session->status !== 'active') {
-            return response()->json(['success' => false, 'message' => 'Attendance session is closed or inactive.'], 404);
+            return response()->json(['success' => false, 'message' => 'Attendance session is already closed or inactive. You can no longer mark attendance.'], 403);
+        }
+
+        // 2. Strict Date Check: Prevent marking attendance for past or future sessions
+        if ($session->date !== \Carbon\Carbon::today()->toDateString()) {
+            return response()->json(['success' => false, 'message' => 'Cannot mark attendance for a past or future date.'], 403);
+        }
+
+        // 3. Section Verification: Ensure student belongs to the respective section of this schedule
+        $scheduleSectionId = $session->schedule->section_id ?? null;
+        if ($scheduleSectionId && (int)$student->section_id !== (int)$scheduleSectionId) {
+            $sectionName = $session->schedule->section->name ?? 'another section';
+            return response()->json([
+                'success' => false, 
+                'message' => 'Section Mismatch: This attendance session is specifically for Section "' . $sectionName . '". You are assigned to a different section.'
+            ], 403);
         }
 
         // --- Geolocation Security Verification ---
         $classroom = $session->schedule->classroom ?? null;
-        if ($classroom && $classroom->latitude && $classroom->longitude) {
+        if ($session->is_geofencing && $classroom && $classroom->latitude && $classroom->longitude) {
             $studentLat = $validated['latitude'] ?? null;
             $studentLng = $validated['longitude'] ?? null;
 
@@ -286,7 +310,8 @@ class StudentPwaController extends Controller
                 'already_marked' => true,
                 'message' => 'Your attendance is already marked Present for this class.',
                 'subject' => $session->schedule->subject->name ?? 'Class',
-                'time' => Carbon::now()->format('h:i A')
+                'time' => Carbon::now()->format('h:i A'),
+                'session_uuid' => $session->uuid
             ]);
         }
 
@@ -310,7 +335,8 @@ class StudentPwaController extends Controller
             'message' => 'Attendance Marked Successfully!',
             'subject' => $session->schedule->subject->name ?? 'Subject',
             'faculty' => $session->faculty->name ?? 'Faculty',
-            'time'    => Carbon::now()->format('h:i A')
+            'time'    => Carbon::now()->format('h:i A'),
+            'session_uuid' => $session->uuid
         ]);
     }
 
@@ -335,6 +361,7 @@ class StudentPwaController extends Controller
 
         // Subject Breakdown
         $subjectStats = AttendanceRecord::where('student_id', $student->id)
+            ->where('status', '!=', 'cancelled')
             ->select('schedule_id', DB::raw('count(*) as total'), DB::raw("SUM(CASE WHEN status='present' THEN 1 ELSE 0 END) as present_count"))
             ->groupBy('schedule_id')
             ->get()
