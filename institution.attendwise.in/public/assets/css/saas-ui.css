@@ -1350,6 +1350,7 @@ input.search-input:focus {
 /* Tags inside the container */
 .search-tag {
     display: inline-flex !important;
+    position: relative;
     align-items: center !important;
     gap: 4px !important;
     background: var(--aw-primary) !important;
@@ -1359,18 +1360,28 @@ input.search-input:focus {
     font-size: 12.5px !important;
     font-weight: 500 !important;
     white-space: nowrap !important;
+    overflow: hidden;
     flex-shrink: 0 !important;
-    max-width: calc(100% - 16px) !important;
+    white-space: nowrap;
+    /* max-width: calc(100% - 16px) !important; */
+    text-overflow: ellipsis;
 }
-
 .search-tag .remove-tag {
     cursor: pointer !important;
     opacity: 0.8 !important;
+    position: absolute;
     margin-left: 3px !important;
     font-size: 15px !important;
     line-height: 1 !important;
+    right: 4px;
+    top: 5px;
+    width: 15px;
+    aspect-ratio: 1/1;
+    background: #fff;
+    color: #000;
+    text-align: center;
+    border-radius: 50%;
 }
-
 .search-tag .remove-tag:hover {
     opacity: 1 !important;
 }

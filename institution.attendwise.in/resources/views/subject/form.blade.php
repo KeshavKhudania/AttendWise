@@ -43,7 +43,7 @@
             </select>
           </div>
 
-          {{-- Semester --}}
+          {{-- Classroom Type --}}
           <div class="col-md-3">
             <label class="form-label">
               Classroom Type <span class="text-danger">*</span>
@@ -57,6 +57,60 @@
               </option>
               @endforeach
             </select>
+          </div>
+
+          {{-- Primary Department --}}
+          <div class="col-md-3">
+            <label class="form-label">
+              Primary Department <span class="text-danger">*</span>
+            </label>
+            <select name="department_id" class="form-select form-control" required>
+              <option value="">Select Department</option>
+              @foreach ($departments as $department)
+              <option value="{{ $department->id }}" {{ old('department_id', $subject->department_id ?? '') == $department->id ? 'selected' : '' }}>
+                {{ $department->name }}
+              </option>
+              @endforeach
+            </select>
+          </div>
+
+          {{-- Additional Department --}}
+          <div class="col-md-3">
+            <label class="form-label">
+              Additional Department
+            </label>
+            <select name="additional_department_id" class="form-select form-control">
+              <option value="">None</option>
+              @foreach ($additional_departments as $department)
+              <option value="{{ $department->id }}" {{ old('additional_department_id', $subject->additional_department_id ?? '') == $department->id ? 'selected' : '' }}>
+                {{ $department->name }}
+              </option>
+              @endforeach
+            </select>
+          </div>
+
+          {{-- Course --}}
+          <div class="col-md-3">
+            <label class="form-label">
+              Course
+            </label>
+            <select name="course_id" class="form-select form-control">
+              <option value="">Select Course</option>
+              @foreach ($courses as $course)
+              <option value="{{ $course->id }}" {{ old('course_id', $subject->course_id ?? '') == $course->id ? 'selected' : '' }}>
+                {{ $course->name }}
+              </option>
+              @endforeach
+            </select>
+          </div>
+
+          {{-- Semester --}}
+          <div class="col-md-3">
+            <label class="form-label">
+              Semester
+            </label>
+            <input type="number" name="semester" class="form-control" min="1" max="10" placeholder="e.g. 1"
+              value="{{ old('semester', $subject->semester ?? '') }}">
           </div>
 
           {{-- Credits --}}

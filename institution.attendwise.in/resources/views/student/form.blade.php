@@ -147,6 +147,18 @@
             </select>
           </div>
 
+          {{-- Password --}}
+          <div class="col-md-3">
+            <label class="form-label">Password</label>
+            <input
+              type="password"
+              name="password"
+              class="form-control"
+              autocomplete="new-password"
+              placeholder="{{ $type === 'EDIT' ? 'Leave blank to keep unchanged' : 'Leave blank to auto-generate' }}"
+            >
+          </div>
+
           {{-- Buttons --}}
           <div class="col-md-12 mt-3">
             <x-form-buttons />

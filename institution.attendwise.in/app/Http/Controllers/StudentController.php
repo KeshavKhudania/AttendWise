@@ -67,6 +67,7 @@ class StudentController extends Controller
             $data = [];
             foreach (Schema::getColumnListing('institution_students') as $value) {
                 if (in_array($value, ['id','created_at','updated_at','deleted_at'])) continue;
+                if ($value == 'password' && empty($req->input($value))) continue;
                 if ($req->has($value)) {
                  if ($value == 'latlng' && $req->post($value) != null) {
                         $data[$value] = serialize($req->post($value));
@@ -85,6 +86,7 @@ class StudentController extends Controller
             // return ;
             foreach (Schema::getColumnListing('institution_students') as $value) {
                 if (in_array($value, ['id','created_at','updated_at','deleted_at'])) continue;
+                if ($value == 'password' && empty($req->input($value))) continue;
                 if ($req->has($value)) {
                     if ($value == 'latlng' && $req->post($value) != null) {
                         $data[$value] = serialize($req->post($value));
@@ -94,6 +96,14 @@ class StudentController extends Controller
                 }
             }
             // return;
+
+            if (!isset($data['password'])) {
+                if (env('APP_DEBUG') == true) {
+                    $data['password'] = 'password123';
+                } else {
+                    $data['password'] = \Illuminate\Support\Str::random(12);
+                }
+            }
 
             $student = Student::create($data); // uses casts to encrypt
             if($student){

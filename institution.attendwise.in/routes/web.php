@@ -168,12 +168,11 @@ Route::middleware(CheckLogin::class)->group(function () {
                         Route::post("subject/update/{id}", "form")->name("institution.subject.update");
                         Route::post("subject/delete/{id}", "delete")->name("institution.subject.delete");
 
+                        Route::post("fetch/subjects", "fetchSubjects")->name("institution.subject.fetch");
+                        
+                        // New Curriculum Builder Routes
                         Route::get("subject-mapping", "semester_subject_mapping")->name("institution.subject.manage.mapping.index");
-                        Route::get("semester-subject-mapping/add", "subjectMappingformView")->name("institution.subject.manage.mapping.add.view");
-                        Route::get("semester-subject-mapping/edit/{id}", "subjectMappingformView")->name("institution.subject.manage.mapping.edit.view");
-                        Route::post("semester-subject-mapping/create", "assignSubjectsToSemester")->name("institution.subject.manage.mapping.create");
-                        Route::post("semester-subject-mapping/update/{id}", "assignSubjectsToSemester")->name("institution.subject.manage.mapping.update");
-                        Route::delete("semester-subject-mapping/delete/{id}", "DeleteSemesterSubject")->name("institution.subject.manage.mapping.delete");
+                        Route::post("subject-mapping/save", "saveCurriculum")->name("institution.subject.manage.mapping.save");
                     }
                     );
                     Route::controller(FacultyController::class)->group(function () {

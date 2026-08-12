@@ -21,6 +21,8 @@
               <th>#</th>
               <th>Subject Name</th>
               <th>Code</th>
+              <th>Course & Sem</th>
+              <th>Department</th>
               <th>Type</th>
               <th>Classroom Type</th>
               <th>Credits</th>
@@ -36,6 +38,19 @@
               <td>{{ $loop->iteration }}</td>
               <td>{{ $subject->name }}</td>
               <td>{{ $subject->code }}</td>
+              <td>
+                @if($subject->course)
+                  {{ $subject->course->name }} (Sem {{ $subject->semester }})
+                @else
+                  -
+                @endif
+              </td>
+              <td>
+                {{ $subject->department->name ?? '-' }}
+                @if($subject->additionalDepartment)
+                  <br><small class="text-muted">+ {{ $subject->additionalDepartment->name }}</small>
+                @endif
+              </td>
               <td class="text-capitalize">{{ $subject->type }}</td>
               <td>{{ $subject->classroom->name ?? '-' }}</td>
               <td>{{ $subject->credits ?? '-' }}</td>

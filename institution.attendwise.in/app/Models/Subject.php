@@ -21,6 +21,12 @@ class Subject extends Model
     function department(){
         return $this->belongsTo(Department::class, "department_id", "id");
     }
+    function additionalDepartment(){
+        return $this->belongsTo(Department::class, "additional_department_id", "id");
+    }
+    function course(){
+        return $this->belongsTo(Course::class, "course_id", "id");
+    }
     function classroom(){
         return $this->belongsTo(ClassRoomType::class, "classroom_type", "id");
     }
