@@ -29,7 +29,7 @@
         </div>
         
         @if($selectedSchedule)
-        <div style="display: flex; justify-content: space-between; align-items: flex-end; border-top: 1px solid var(--border); padding-top: 2rem;">
+        <div class="responsive-header" style="border-top: 1px solid var(--border); padding-top: 2rem;">
             <div>
                 <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--text-main);">{{ $selectedSchedule->subject->name }}</h3>
                 <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem;">
@@ -117,7 +117,7 @@
                     <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.25rem;">Regenerates every 8s for security</p>
                 </div>
                 
-                <div id="qrcode-display" style="padding: 1.5rem; background: white; border-radius: 1.25rem; box-shadow: 0 10px 40px rgba(0,0,0,0.08); border: 1px solid #eee; width: fit-content;"></div>
+                <div id="qrcode-display" style="padding: 1rem; background: white; border-radius: 1.25rem; box-shadow: 0 10px 40px rgba(0,0,0,0.08); border: 1px solid #eee; width: fit-content; max-width: 100%; display: flex; justify-content: center; align-items: center;"></div>
                 
                 <div style="margin-top: 1.5rem; width: 100%; max-width: 350px;">
                     <div id="qr-timer-bar-container" style="height: 6px; background: #eee; width: 100%; border-radius: 10px; overflow: hidden; margin-bottom: 2rem;">
@@ -219,7 +219,7 @@
             </div>
             
             <!-- Student Attendance List -->
-            <div style="border: 1px solid var(--border); border-radius: 0.75rem; overflow: hidden;">
+            <div class="responsive-table-wrapper" style="border: 1px solid var(--border); border-radius: 0.75rem; overflow-x: auto;">
                 <table style="width: 100%; border-collapse: collapse;">
                     <thead style="background: var(--subtle-bg);">
                         <tr>
@@ -262,16 +262,16 @@
 
             @if(count($students) > 0)
             <!-- Action Bar -->
-            <div style="margin-top: 2.5rem; border-top: 1px solid var(--border); padding-top: 2.5rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
-                <button type="button" onclick="switchMethod()" class="btn-primary" style="background: transparent; color: var(--text-main); border: 1px solid var(--border); padding: 0.8rem 1.5rem; font-size: 0.95rem;">
+            <div class="responsive-actions" style="margin-top: 2.5rem; border-top: 1px solid var(--border); padding-top: 2.5rem;">
+                <button type="button" onclick="switchMethod()" class="btn-primary" style="background: transparent; color: var(--text-main); border: 1px solid var(--border); padding: 0.8rem 1.5rem; font-size: 0.95rem; width: 100%; justify-content: center;">
                     <i data-lucide="arrow-left-right" style="width: 16px; margin-right: 6px; display: inline-block; vertical-align: middle;"></i> Switch Method
                 </button>
-                <div style="display: flex; gap: 1rem;">
-                    <a href="{{ route('faculty.dashboard') }}" class="btn-primary" style="background: transparent; color: var(--text-main); border: 1px solid var(--border); padding: 0.8rem 1.5rem;">
+                <div style="display: flex; gap: 1rem; width: 100%;">
+                    <a href="{{ route('faculty.dashboard') }}" class="btn-primary" style="background: transparent; color: var(--text-main); border: 1px solid var(--border); padding: 0.8rem 1.5rem; flex: 1; justify-content: center;">
                         Cancel
                     </a>
-                    <button type="submit" class="btn-primary" style="padding: 0.8rem 2rem; font-size: 0.95rem;">
-                        {{ count($existingRecords) > 0 ? 'Update Attendance Record' : 'Submit Attendance Record' }}
+                    <button type="submit" class="btn-primary" style="padding: 0.8rem 1.5rem; font-size: 0.95rem; flex: 2; justify-content: center;">
+                        {{ count($existingRecords) > 0 ? 'Update' : 'Submit' }}
                     </button>
                 </div>
             </div>
@@ -535,10 +535,40 @@
         grid-template-columns: 1.2fr 1fr;
         gap: 2rem;
     }
+    .responsive-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+    }
+    .responsive-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+    }
+    #qrcode-display canvas, #qrcode-display img {
+        max-width: 100%;
+        height: auto !important;
+    }
+    
     @media (max-width: 1024px) {
         .methods-grid, .roster-grid {
             grid-template-columns: 1fr;
             gap: 1rem;
+        }
+        
+        .responsive-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1.5rem;
+        }
+        
+        .responsive-actions {
+            flex-direction: column;
+        }
+        
+        .responsive-actions > div {
+            width: 100% !important;
         }
         
         .card {
