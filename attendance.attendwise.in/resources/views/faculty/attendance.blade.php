@@ -538,15 +538,36 @@
     @media (max-width: 1024px) {
         .methods-grid, .roster-grid {
             grid-template-columns: 1fr;
+            gap: 1rem;
         }
         
         .card {
-            padding: 1.5rem !important;
+            padding: 1.25rem !important;
         }
         
-        #method-modal-overlay .card {
+        #method-modal-overlay .card,
+        #ocr-modal-overlay .card,
+        #reset-modal-overlay .card,
+        #close-modal-overlay .card {
             padding: 1.5rem !important;
             margin: 1rem;
+            max-height: 90vh;
+            overflow-y: auto;
+            width: calc(100% - 2rem);
+        }
+        
+        .method-card {
+            padding: 1rem;
+            gap: 0.5rem;
+        }
+        
+        .method-card .icon-box {
+            padding: 0.75rem;
+            margin-bottom: 0.25rem;
+        }
+        
+        .method-card h3 {
+            margin-bottom: 0.25rem !important;
         }
         
         .student-row td {
