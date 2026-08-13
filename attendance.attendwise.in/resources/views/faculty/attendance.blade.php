@@ -71,7 +71,7 @@
                 <p style="color: var(--text-muted); margin-top: 0.5rem;">Select how you want to verify student presence for this session.</p>
             </div>
 
-            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem;">
+            <div class="methods-grid">
                 <!-- QR Code Option -->
                 <div onclick="selectMethod('qr')" class="method-card" id="qr-card">
                     <div class="icon-box" style="background: rgba(99, 102, 241, 0.1); color: #6366f1;">
@@ -109,7 +109,7 @@
     </div>
 
     <div id="qr-roster-container" style="display: none;">
-        <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 2rem;">
+        <div class="roster-grid">
             <!-- Left: QR Code & Multi-Verification -->
             <div class="card" style="display: flex; flex-direction: column; align-items: center; padding: 2.5rem; text-align: center; background: var(--bg); border: 1px solid var(--border); border-radius: 1.5rem;">
                 <div style="margin-bottom: 1.5rem;">
@@ -523,6 +523,39 @@
         0% { top: 0%; }
         50% { top: 100%; }
         100% { top: 0%; }
+    }
+
+    .methods-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.5rem;
+    }
+    .roster-grid {
+        display: grid;
+        grid-template-columns: 1.2fr 1fr;
+        gap: 2rem;
+    }
+    @media (max-width: 1024px) {
+        .methods-grid, .roster-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .card {
+            padding: 1.5rem !important;
+        }
+        
+        #method-modal-overlay .card {
+            padding: 1.5rem !important;
+            margin: 1rem;
+        }
+        
+        .student-row td {
+            padding: 1rem 0.5rem !important;
+        }
+        
+        .status-btn {
+            padding: 0.4rem 0.6rem;
+        }
     }
 </style>
 

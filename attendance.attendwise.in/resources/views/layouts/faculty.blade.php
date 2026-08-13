@@ -2,7 +2,10 @@
 <html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#000000">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Faculty Portal - AttendWise</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -281,17 +284,59 @@
             opacity: 0.9;
         }
 
+        /* Overlay for mobile */
+        .sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            z-index: 45;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .sidebar-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .menu-toggle {
+            display: none;
+            background: transparent;
+            border: none;
+            color: var(--text-main);
+            cursor: pointer;
+            padding: 0.5rem;
+            margin-right: 1rem;
+        }
+
         @media (max-width: 1024px) {
-            .sidebar { transform: translateX(-100%); }
+            .sidebar { 
+                transform: translateX(-100%);
+                box-shadow: 4px 0 24px rgba(0,0,0,0.1); 
+            }
+            .sidebar.open {
+                transform: translateX(0);
+            }
             .main-content, .top-bar { margin-left: 0; left: 0; }
+            .menu-toggle { display: block; }
+            .breadcrumb { display: none; }
+            .top-bar { padding: 0 1rem; }
+            .content-inner { padding: 1.5rem 1rem; }
         }
     </style>
     @yield('styles')
     @vite(['resources/js/app.js'])
 </head>
 <body>
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
     <div class="layout">
-        <aside class="sidebar">
+        <aside class="sidebar" id="sidebar">
             <div class="logo-area">
                 <img src="{{ asset('assets/images/logo.png') }}" alt="AttendWise" style="height: 32px; width: auto;">
                 AttendWise
@@ -336,8 +381,13 @@
 
         <main class="main-content">
             <div class="top-bar">
-                <div class="breadcrumb" style="font-size: 0.85rem; color: var(--text-muted);">
-                    Faculty Portal / <span style="color: var(--text-main)">@yield('header-title', 'Overview')</span>
+                <div style="display: flex; align-items: center;">
+                    <button class="menu-toggle" id="menu-toggle">
+                        <i data-lucide="menu"></i>
+                    </button>
+                    <div class="breadcrumb" style="font-size: 0.85rem; color: var(--text-muted);">
+                        Faculty Portal / <span style="color: var(--text-main)">@yield('header-title', 'Overview')</span>
+                    </div>
                 </div>
                 <div class="controls">
                     <button class="theme-toggle" id="theme-toggle" title="Toggle Theme">
@@ -407,6 +457,29 @@
         themeToggle.addEventListener('click', () => {
             const currentTheme = root.getAttribute('data-theme');
             setTheme(currentTheme === 'dark' ? 'light' : 'dark');
+        });
+
+        // Mobile Sidebar Toggle
+        const menuToggle = document.getElementById('menu-toggle');
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebar-overlay');
+
+        function toggleSidebar() {
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('active');
+            document.body.style.overflow = sidebar.classList.contains('open') ? 'hidden' : '';
+        }
+
+        menuToggle.addEventListener('click', toggleSidebar);
+        overlay.addEventListener('click', toggleSidebar);
+
+        // Close sidebar when clicking a link on mobile
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', () => {
+                if(window.innerWidth <= 1024) {
+                    toggleSidebar();
+                }
+            });
         });
 
         // Global Session Expiration & Fetch Interceptor

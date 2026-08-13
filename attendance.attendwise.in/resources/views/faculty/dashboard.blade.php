@@ -235,7 +235,35 @@
 @endsection
 
 @section('content')
-<div class="grid" style="grid-template-columns: repeat(3, 1fr);">
+<style>
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.5rem;
+    }
+    
+    @media (max-width: 768px) {
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .lecture-item {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+        
+        .lecture-item > div:last-child {
+            width: 100%;
+        }
+        
+        .lecture-item > div:last-child a.btn-modern {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+</style>
+<div class="stats-grid">
     <!-- Stats Cards -->
     <div class="modern-card animate-fade-in" style="animation-delay: 0.1s;">
         <div style="display: flex; justify-content: space-between; align-items: flex-start;">
