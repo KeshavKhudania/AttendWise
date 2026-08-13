@@ -183,6 +183,12 @@
                     </div>
                     <span id="present-count-badge" style="background: rgba(16, 185, 129, 0.1); color: #10b981; padding: 0.25rem 0.75rem; border-radius: 2rem; font-size: 0.75rem; font-weight: 700;">0 Scanned</span>
                 </div>
+                <div style="padding: 1rem 2rem; border-bottom: 1px solid var(--border); background: var(--subtle-bg);">
+                    <div style="position: relative;">
+                        <i data-lucide="search" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); width: 16px; color: var(--text-muted);"></i>
+                        <input type="text" id="live-search-input" placeholder="Search live feed..." style="width: 100%; padding: 0.75rem 1rem 0.75rem 2.5rem; border: 1px solid var(--border); border-radius: 0.5rem; background: var(--bg); color: var(--text-main); font-size: 0.85rem;" onkeyup="filterLiveStudents()">
+                    </div>
+                </div>
                 <div style="flex: 1; overflow-y: auto; padding: 1.5rem;" id="qr-student-list">
                     @foreach($students as $student)
                     <div class="qr-student-row" id="st-{{ $student->id }}" style="display: flex; align-items: center; gap: 1rem; padding: 1rem; border-radius: 1rem; margin-bottom: 0.75rem; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); opacity: 0.4; border: 1px solid transparent;">
@@ -206,6 +212,12 @@
             @csrf
             <input type="hidden" name="schedule_id" value="{{ $selectedSchedule->id }}">
             
+            <!-- Search Bar -->
+            <div style="margin-bottom: 1rem; position: relative;">
+                <i data-lucide="search" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); width: 18px; color: var(--text-muted);"></i>
+                <input type="text" id="student-search-input" placeholder="Search by name or roll number..." style="width: 100%; padding: 0.85rem 1rem 0.85rem 2.75rem; border: 1px solid var(--border); border-radius: 0.75rem; background: var(--subtle-bg); color: var(--text-main); font-size: 0.95rem; font-weight: 500;" onkeyup="filterStudents()">
+            </div>
+            
             <!-- Student Attendance List -->
             <div style="border: 1px solid var(--border); border-radius: 0.75rem; overflow: hidden;">
                 <table style="width: 100%; border-collapse: collapse;">
@@ -221,7 +233,7 @@
                         @php
                             $status = $existingRecords[$student->id] ?? 'present';
                         @endphp
-                        <tr style="border-bottom: 1px solid var(--border);">
+                        <tr class="student-row" style="border-bottom: 1px solid var(--border);">
                             <td style="padding: 1.25rem 1.5rem; font-size: 0.9rem; font-weight: 500; color: var(--text-muted);">{{ $student->roll_number }}</td>
                             <td style="padding: 1.25rem 1.5rem;">
                                 <div style="font-size: 0.95rem; font-weight: 600; color: var(--text-main);">{{ $student->name }}</div>
@@ -521,6 +533,43 @@
     let currentSessionUuid = null;
     let qrcode = null;
     let echoChannel = null;
+
+    function filterStudents() {
+        const query = document.getElementById('student-search-input').value.toLowerCase();
+        const rows = document.querySelectorAll('.student-row');
+        
+        rows.forEach(row => {
+            const rollNo = row.querySelector('td:nth-child(1)').innerText.toLowerCase();
+            const name = row.querySelector('td:nth-child(2) div').innerText.toLowerCase();
+            
+            if (rollNo.includes(query) || name.includes(query)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+
+    function filterLiveStudents() {
+        const query = document.getElementById('live-search-input').value.toLowerCase();
+        const rows = document.querySelectorAll('.qr-student-row');
+        
+        rows.forEach(row => {
+            // Find the div containing the name and roll number text
+            const nameEl = row.querySelector('div:nth-child(2) > div:nth-child(1)');
+            const rollNoEl = row.querySelector('div:nth-child(2) > div:nth-child(2)');
+            
+            if (nameEl && rollNoEl) {
+                const name = nameEl.innerText.toLowerCase();
+                const rollNo = rollNoEl.innerText.toLowerCase();
+                if (name.includes(query) || rollNo.includes(query)) {
+                    row.style.display = 'flex';
+                } else {
+                    row.style.display = 'none';
+                }
+            }
+        });
+    }
 
     function showResetModal() {
         const modal = document.getElementById('reset-modal-overlay');
@@ -914,7 +963,7 @@
             document.getElementById('ocr-detected-text').innerText = cleanText || '[No text detected]';
             
             // Only attempt verification if we picked up at least some alphanumeric characters
-            const alphanumericCount = (cleanText.match(/[A-Z0-9]/g) || []).length;
+            const alphanumericCount = (cleanText.match(/[a-zA-Z0-9]/g) || []).length;
             
             if (alphanumericCount >= 4) {
                 document.getElementById('ocr-status').innerText = 'Analyzing detected text...';
@@ -954,6 +1003,8 @@
             if (data.success) {
                 successMsg.innerText = data.message;
                 successMsg.style.display = 'block';
+                document.getElementById('ocr-status').innerText = 'Student verified!';
+                document.getElementById('ocr-status').style.color = '#10b981';
                 
                 // Autofill the input with the matched roll number for visual confirmation
                 if (data.roll_number) {
@@ -964,16 +1015,29 @@
                     markStudentLive(data.student_id);
                 }
                 
+                // Do not close the scanner! Allow continuous scanning.
+                // Just clear the success state after 2.5 seconds to prepare for the next ID.
                 setTimeout(() => {
-                    stopOcrScanner();
-                }, 1000);
+                    successMsg.style.display = 'none';
+                    document.getElementById('ocr-roll-input').value = '';
+                    document.getElementById('ocr-detected-text').innerText = '[Ready for next scan]';
+                    document.getElementById('ocr-status').innerText = 'Scanning...';
+                    document.getElementById('ocr-status').style.color = '#4f46e5';
+                }, 2500);
             } else {
                 if (rollNumber) {
                     // Only show error for manual submission, otherwise ignore and keep scanning
                     errorMsg.innerText = data.message || 'Verification failed.';
                     errorMsg.style.display = 'block';
                 } else {
-                    document.getElementById('ocr-status').innerText = 'No matching student found. Scanning...';
+                    document.getElementById('ocr-status').innerText = 'Scanning...';
+                    if (data.message) {
+                        errorMsg.innerText = data.message;
+                        errorMsg.style.display = 'block';
+                    }
+                    if (data.suggested_roll) {
+                        document.getElementById('ocr-roll-input').value = data.suggested_roll;
+                    }
                 }
             }
         } catch (err) {

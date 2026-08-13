@@ -253,10 +253,14 @@ class DashboardController extends Controller
             ]
         );
 
-        event(new \App\Events\LiveAttendanceAction($session->uuid, 'student_joined', [
-            'student_id' => $studentId,
-            'status' => 'present'
-        ]));
+        try {
+            event(new \App\Events\LiveAttendanceAction($session->uuid, 'student_joined', [
+                'student_id' => $studentId,
+                'status' => 'present'
+            ]));
+        } catch (\Exception $e) {
+            Log::warning('WebSocket broadcast failed: ' . $e->getMessage());
+        }
 
         return response()->json(['success' => true, 'message' => 'Attendance marked successfully']);
     }
@@ -291,7 +295,11 @@ class DashboardController extends Controller
             
         $session->update(['status' => 'completed']);
         
-        event(new \App\Events\LiveAttendanceAction($session->uuid, 'session_ended', []));
+        try {
+            event(new \App\Events\LiveAttendanceAction($session->uuid, 'session_ended', []));
+        } catch (\Exception $e) {
+            Log::warning('WebSocket broadcast failed: ' . $e->getMessage());
+        }
         
         return response()->json(['success' => true]);
     }
@@ -335,7 +343,11 @@ class DashboardController extends Controller
             AttendanceRecord::where('attendance_session_id', $session->id)
                 ->update(['status' => 'cancelled', 'remarks' => 'Session Reset/Cancelled by Faculty']);
                 
-            event(new \App\Events\LiveAttendanceAction($session->uuid, 'session_ended', []));
+            try {
+                event(new \App\Events\LiveAttendanceAction($session->uuid, 'session_ended', []));
+            } catch (\Exception $e) {
+                Log::warning('WebSocket broadcast failed: ' . $e->getMessage());
+            }
         }
 
         return redirect()->route('faculty.attendance', ['schedule' => $schedule->id])->with('success', 'Attendance session has been reset and cancelled.');
@@ -346,7 +358,7 @@ class DashboardController extends Controller
         $faculty = Auth::guard('faculty')->user();
         $sessionUuid = $request->uuid;
         $rollNumber = trim($request->roll_number ?? '');
-        $ocrText = strtoupper(preg_replace('/[^A-Z0-9]/', '', $request->ocr_text ?? ''));
+        $ocrText = preg_replace('/[^A-Z0-9]/', '', strtoupper($request->ocr_text ?? ''));
 
         if (!$sessionUuid || (!$rollNumber && !$ocrText)) {
             return response()->json(['success' => false, 'message' => 'Session UUID and Roll Number/OCR Text are required.'], 400);
@@ -364,15 +376,41 @@ class DashboardController extends Controller
         $student = null;
 
         if ($rollNumber) {
-            // Exact match via manual entry
-            $student = Student::where('institution_id', $faculty->institution_id)
-                ->whereRaw('LOWER(roll_number) = ?', [strtolower($rollNumber)])
-                ->first();
+            // Flexible match via manual entry
+            $cleanInput = preg_replace('/[^A-Z0-9]/', '', strtoupper($rollNumber));
+            $students = Student::where('institution_id', $faculty->institution_id)->get();
+            foreach ($students as $s) {
+                if (preg_replace('/[^A-Z0-9]/', '', strtoupper($s->roll_number)) === $cleanInput) {
+                    $student = $s;
+                    break;
+                }
+            }
         } elseif ($ocrText) {
-            // ANTI-SPOOFING CHECK: Real ID cards contain boilerplate text. Handwritten papers usually only contain the roll number.
-            if (!$rollNumber) { // Only run for automated OCR scans, skip for manual faculty entry
+            // Smart OCR text matching against all students in the institution
+            // (Class enrollment is strictly verified later)
+            $enrolledStudents = Student::where('institution_id', $faculty->institution_id)->get();
+
+            foreach ($enrolledStudents as $enrolled) {
+                $cleanRoll = preg_replace('/[^A-Z0-9]/', '', strtoupper($enrolled->roll_number));
+                // Ensure roll number is substantial enough to avoid false positives
+                if (strlen($cleanRoll) >= 3) {
+                    // Also handle common OCR mistakes
+                    $ocrMistakes = ['O', 'I', 'S', 'B', 'Z'];
+                    $ocrCorrections = ['0', '1', '5', '8', '2'];
+                    $cleanOcrTextReplaced = str_replace($ocrMistakes, $ocrCorrections, $ocrText);
+                    $cleanRollReplaced = str_replace($ocrMistakes, $ocrCorrections, $cleanRoll);
+
+                    if (strpos($ocrText, $cleanRoll) !== false || strpos($cleanOcrTextReplaced, $cleanRollReplaced) !== false) {
+                        $student = $enrolled;
+                        break;
+                    }
+                }
+            }
+            
+            if ($student && !$rollNumber) {
+                // ANTI-SPOOFING CHECK: Real ID cards contain boilerplate text. Handwritten papers usually only contain the roll number.
                 if (strlen($ocrText) < 15) {
-                    return response()->json(['success' => false, 'message' => 'Anti-Spoofing: Scan lacks sufficient printed text.'], 400);
+                    return response()->json(['success' => false, 'message' => 'Anti-Spoofing: Scan lacks sufficient printed text.', 'suggested_roll' => $student->roll_number], 400);
                 }
 
                 $securityKeywords = ['ID', 'IDENTITY', 'CARD', 'STUDENT', 'VALID', 'DOB', 'BLOOD', 'GROUP', 'ISSUED', 'CONTACT', 'EMERGENCY', 'UNIVERSITY', 'COLLEGE', 'INSTITUTE', 'SCHOOL', 'ACADEMY', 'COURSE', 'PROGRAM', 'DEPARTMENT', 'SIGNATURE', 'NAME', 'FATHER'];
@@ -385,36 +423,7 @@ class DashboardController extends Controller
                 
                 // Require at least 1 security keyword to prove this is a printed ID card
                 if ($foundKeywords < 1) {
-                    return response()->json(['success' => false, 'message' => 'Anti-Spoofing: Institutional markers missing.'], 400);
-                }
-            }
-
-            // Smart OCR text matching against students in this specific schedule
-            $query = Student::where('institution_id', $faculty->institution_id);
-            if ($schedule) {
-                if ($schedule->section_id) {
-                    $query->where('section_id', $schedule->section_id);
-                } elseif ($schedule->class_group_id) {
-                    $query->where('class_group_id', $schedule->class_group_id);
-                }
-            }
-            $enrolledStudents = $query->get();
-
-            foreach ($enrolledStudents as $enrolled) {
-                $cleanRoll = strtoupper(preg_replace('/[^A-Z0-9]/', '', $enrolled->roll_number));
-                // Ensure roll number is substantial enough to avoid false positives (e.g. at least 3 chars)
-                if (strlen($cleanRoll) >= 3) {
-                    // Check if the clean roll number exists within the cleaned OCR text
-                    // Also handle common OCR mistakes: replacing 'O' with '0', 'I' with '1', 'S' with '5', 'B' with '8', 'Z' with '2'
-                    $ocrMistakes = ['O', 'I', 'S', 'B', 'Z'];
-                    $ocrCorrections = ['0', '1', '5', '8', '2'];
-                    $cleanOcrTextReplaced = str_replace($ocrMistakes, $ocrCorrections, $ocrText);
-                    $cleanRollReplaced = str_replace($ocrMistakes, $ocrCorrections, $cleanRoll);
-
-                    if (strpos($ocrText, $cleanRoll) !== false || strpos($cleanOcrTextReplaced, $cleanRollReplaced) !== false) {
-                        $student = $enrolled;
-                        break;
-                    }
+                    return response()->json(['success' => false, 'message' => 'Anti-Spoofing: Institutional markers missing.', 'suggested_roll' => $student->roll_number], 400);
                 }
             }
         }
@@ -457,10 +466,14 @@ class DashboardController extends Controller
         );
 
         // Broadcast to LiveAttendanceAction so the UI updates in real-time
-        event(new \App\Events\LiveAttendanceAction($session->uuid, 'student_joined', [
-            'student_id' => $student->id,
-            'status' => 'present'
-        ]));
+        try {
+            event(new \App\Events\LiveAttendanceAction($session->uuid, 'student_joined', [
+                'student_id' => $student->id,
+                'status' => 'present'
+            ]));
+        } catch (\Exception $e) {
+            Log::warning('WebSocket broadcast failed: ' . $e->getMessage());
+        }
 
         return response()->json([
             'success' => true,

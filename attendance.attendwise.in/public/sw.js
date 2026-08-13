@@ -56,7 +56,9 @@ self.addEventListener('fetch', (event) => {
             if (cachedResponse) {
               return cachedResponse;
             }
-            return caches.match('student/login');
+            return caches.match('student/login').then(loginCache => {
+                return loginCache || new Response('Offline - No connection available.', { status: 503, statusText: 'Service Unavailable' });
+            });
           });
         })
     );
@@ -73,7 +75,8 @@ self.addEventListener('fetch', (event) => {
         }
         return networkResponse;
       }).catch(() => {
-        // Suppress network errors for offline assets
+        // Suppress network errors for offline assets, but return a valid Response
+        return new Response('', { status: 503, statusText: 'Service Unavailable' });
       });
 
       return cachedResponse || fetchPromise;
