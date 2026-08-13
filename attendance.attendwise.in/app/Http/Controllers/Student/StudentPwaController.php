@@ -35,10 +35,12 @@ class StudentPwaController extends Controller
     {
         $validated = $request->validate([
             'roll_number' => 'required|string',
-            'login'       => 'required|string',
+            'login'       => 'required',
             'password'    => 'required|string',
             'device_id'   => 'nullable|string',
         ]);
+        
+        $validated['login'] = (string) $validated['login'];
 
         $deviceId = $validated['device_id'] ?? Str::uuid()->toString();
 

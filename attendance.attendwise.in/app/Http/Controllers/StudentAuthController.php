@@ -23,12 +23,14 @@ class StudentAuthController extends Controller
         // --- 1. Validate ---
         $validated = $request->validate([
             'roll_number' => 'required|string',             // roll number
-            'login'       => 'required|string',             // email or mobile
+            'login'       => 'required',                    // email or mobile (can be int from JSON)
             'password'    => 'required|string',
             'device_id'   => 'required|string',             // unique device identifier
             'fcm_token'   => 'nullable|string',             // push notification token
             'platform'    => 'nullable|string|in:android,ios',
         ]);
+        
+        $validated['login'] = (string) $validated['login'];
 
         // --- 2. Find student by roll_number AND (email or mobile) ---
         // Handle Static Demo Credentials
