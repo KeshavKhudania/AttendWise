@@ -51,6 +51,7 @@ class StudentPwaController extends Controller
 
         if ($isDemo) {
             $student = Student::first();
+            session(['is_demo_account' => true]);
         } else {
             $loginHash = search_hash($validated['login']);
 
@@ -60,6 +61,7 @@ class StudentPwaController extends Controller
                                         ->orWhere('mobile_hash', $loginHash);
                               })
                               ->first();
+            session()->forget('is_demo_account');
         }
 
         if (!$student) {
@@ -211,10 +213,12 @@ class StudentPwaController extends Controller
             'longitude' => 'nullable|numeric',
         ]);
 
+        $isDemoAccount = session('is_demo_account', false);
+
         // Validate Single-Device Policy
         $currentDeviceId = $validated['device_id'] ?? session('student_device_id');
         $activeSessionRecord = StudentSession::where('student_id', $student->id)->first();
-        if ($activeSessionRecord && $currentDeviceId && $activeSessionRecord->device_id !== $currentDeviceId) {
+        if (!$isDemoAccount && $activeSessionRecord && $currentDeviceId && $activeSessionRecord->device_id !== $currentDeviceId) {
             Auth::guard('student')->logout();
             return response()->json([
                 'success' => false,
@@ -233,7 +237,7 @@ class StudentPwaController extends Controller
         $timestamp = (int)$parts[1];
 
         // Check 15-second dynamic QR validity window
-        if (abs(now()->timestamp - $timestamp) > 15) {
+        if (!$isDemoAccount && abs(now()->timestamp - $timestamp) > 15) {
             return response()->json(['success' => false, 'message' => 'QR Code has expired. Please wait for the screen to refresh.'], 403);
         }
 
@@ -253,7 +257,7 @@ class StudentPwaController extends Controller
 
         // 3. Section Verification: Ensure student belongs to the respective section of this schedule
         $scheduleSectionId = $session->schedule->section_id ?? null;
-        if ($scheduleSectionId && (int)$student->section_id !== (int)$scheduleSectionId) {
+        if (!$isDemoAccount && $scheduleSectionId && (int)$student->section_id !== (int)$scheduleSectionId) {
             $sectionName = $session->schedule->section->name ?? 'another section';
             return response()->json([
                 'success' => false, 
@@ -263,7 +267,7 @@ class StudentPwaController extends Controller
 
         // --- Geolocation Security Verification ---
         $classroom = $session->schedule->classroom ?? null;
-        if ($session->is_geofencing && $classroom && $classroom->latitude && $classroom->longitude) {
+        if (!$isDemoAccount && $session->is_geofencing && $classroom && $classroom->latitude && $classroom->longitude) {
             $studentLat = $validated['latitude'] ?? null;
             $studentLng = $validated['longitude'] ?? null;
 
@@ -434,5 +438,37 @@ class StudentPwaController extends Controller
         }
 
         return redirect()->route('student.login');
+    }
+
+    /**
+     * Show Facial Registration View
+     */
+    public function faceRegisterView()
+    {
+        $student = Auth::guard('student')->user();
+        if (!$student) return redirect()->route('student.login');
+        if ($student->face_descriptor) {
+            return redirect()->route('student.profile')->with('success', 'Face already registered.');
+        }
+
+        return view('student.face_register', compact('student'));
+    }
+
+    /**
+     * Store Face Descriptor JSON
+     */
+    public function storeFaceDescriptor(Request $request)
+    {
+        $student = Auth::guard('student')->user();
+        if (!$student) return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+
+        $request->validate([
+            'descriptors' => 'required|string', // Expecting JSON array string
+        ]);
+
+        $student->face_descriptor = $request->descriptors;
+        $student->save();
+
+        return response()->json(['success' => true, 'message' => 'Face registered successfully!']);
     }
 }

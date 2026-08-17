@@ -32,6 +32,7 @@ Route::prefix('faculty')->name('faculty.')->group(function () {
         Route::post('attendance/qr/close', [DashboardController::class, 'qrSessionClose'])->name('attendance.qr.close');
         Route::post('attendance/qr/toggle-geofence', [DashboardController::class, 'qrToggleGeofence'])->name('attendance.qr.toggle_geofence');
         Route::post('attendance/qr/mark-ocr', [DashboardController::class, 'qrMarkStudentByRollNumber'])->name('attendance.qr.mark_ocr');
+        Route::post('attendance/qr/request-facial', [DashboardController::class, 'qrRequestFacial'])->name('attendance.qr.request_facial');
         
         Route::get('leave-request', function() { return view('faculty.leave'); })->name('leave');
         Route::get('events', function() { return view('faculty.events'); })->name('events');
@@ -53,6 +54,10 @@ Route::prefix('student')->name('student.')->group(function () {
         Route::get('history', [StudentPwaController::class, 'history'])->name('history');
         Route::get('timetable', [StudentPwaController::class, 'timetable'])->name('timetable');
         Route::get('profile', [StudentPwaController::class, 'profile'])->name('profile');
+        
+        // Face Registration
+        Route::get('face-register', [StudentPwaController::class, 'faceRegisterView'])->name('face_register');
+        Route::post('face-register', [StudentPwaController::class, 'storeFaceDescriptor'])->name('face_register.store');
     });
 });
 

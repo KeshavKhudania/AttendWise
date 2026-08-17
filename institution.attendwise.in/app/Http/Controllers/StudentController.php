@@ -125,11 +125,11 @@ class StudentController extends Controller
     public function import(Request $request)
     {
         $request->validate([
-            'csv_file' => 'required|file|mimes:csv,txt',
+            'excel_file' => 'required|file|mimes:csv,txt,xlsx,xls',
             'avg_section_size' => 'nullable|integer|min:1',
         ]);
 
-        $path = $request->file('csv_file')->store('imports/students');
+        $path = $request->file('excel_file')->store('imports/students');
 // dd(
 //     $path,
 //     gettype($path)
@@ -169,8 +169,11 @@ class StudentController extends Controller
         $callback = function() {
             $file = fopen('php://output', 'w');
             fputcsv($file, [
-                'roll_number', 'name', 'email', 'mobile', 'gender',
-                'academic_year', 'semester', 'department', 'course', 'section', 'class_group'
+                'roll_number (Required)', 'name (Required)', 'email', 'mobile', 'gender',
+                'academic_year (Required)', 'semester', 'department (Required)', 'course (Required)', 'section', 'class_group',
+                'first_name', 'last_name', 'batch', 'specialization', 'address', 'guardian_details', 'admission_date', 'enrollment_number', 'password',
+                'date_of_birth', 'blood_group', 'religion', 'caste_category', 'nationality', 'mother_tongue', 'national_id', 'permanent_address', 'emergency_contact_name', 'emergency_contact_number',
+                'admission_type', 'previous_qualification', 'previous_school', 'previous_marks_percentage', 'is_hosteller', 'hostel_room_details', 'uses_transport', 'transport_route_details', 'bank_account_no', 'bank_name', 'bank_ifsc', 'medical_history'
             ]);
             
             // Add a sample row
@@ -185,7 +188,10 @@ class StudentController extends Controller
                 'Computer Science', 
                 'B.Tech', 
                 'A', 
-                'G1'
+                'G1',
+                'John', 'Doe', '2023', '', 'Local Address', 'Jane Doe - Mother', '2023-08-01', 'ENR123456', 'Password123',
+                '2005-01-01', 'O+', 'Christian', 'General', 'American', 'English', 'ID98765', 'Permanent Address', 'Jane Doe', '9876543210',
+                'Regular', 'High School', 'St. Mary High', '85.5', '0', '', '1', 'Route A', '123456789', 'Bank Name', 'IFSC001', 'None'
             ]);
             
             fclose($file);

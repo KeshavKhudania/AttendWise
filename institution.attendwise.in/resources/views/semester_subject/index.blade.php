@@ -215,21 +215,28 @@
     <div class="card hero-card shadow-sm mb-5" style="background: #ffffff !important; color: #111827 !important; border-radius: 1.5rem !important; border: 1px solid #e2e8f0 !important;">
         <div class="card-body p-4 p-md-5" style="background: #ffffff !important;">
             <div class="row align-items-center">
-                <div class="col-lg-6 mb-4 mb-lg-0 text-center text-lg-start">
+                <div class="col-lg-5 mb-4 mb-lg-0 text-center text-lg-start">
                     <h2 class="fw-bold mb-2 text-dark" style="color: #111827 !important;">Curriculum Architect</h2>
                     <p class="mb-0 text-muted" style="color: #4b5563 !important; font-size: 1.1rem;">Select a course to seamlessly build, organize, and deploy its semester-wise subjects.</p>
                 </div>
-                <div class="col-lg-6 text-start">
-                    <form id="courseSelectForm" method="GET" action="{{ route('institution.subject.manage.mapping.index') }}">
+                <div class="col-lg-7 text-start">
+                    <form id="courseSelectForm" method="GET" action="{{ route('institution.subject.manage.mapping.index') }}" class="w-100">
                         <label class="form-label fw-semibold mb-2 ms-2 text-dark" style="color: #374151 !important;"><i class="fa fa-search me-1 text-primary"></i> Target Course</label>
-                        <select id="courseSelect" name="course_id" class="form-select msc-searchable w-100">
-                            <option value="">-- Search & Choose Course --</option>
-                            @foreach($courses as $course)
-                            <option value="{{ $course->id }}" {{ request('course_id') == $course->id ? 'selected' : '' }}>
-                                {{ $course->name }}
-                            </option>
-                            @endforeach
-                        </select>
+                        <div class="d-flex gap-2 align-items-end">
+                            <div class="flex-grow-1">
+                                <select id="courseSelect" name="course_id" class="form-select msc-searchable w-100">
+                                    <option value="">-- Search & Choose Course --</option>
+                                    @foreach($courses as $course)
+                                    <option value="{{ $course->id }}" {{ request('course_id') == $course->id ? 'selected' : '' }}>
+                                        {{ $course->name }}
+                                    </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <button type="button" class="btn btn-outline-primary fw-semibold px-4 rounded-3 shadow-sm text-nowrap" style="height: 38px;" data-bs-toggle="modal" data-bs-target="#importMappingsModal">
+                                <i class="fas fa-file-excel me-1"></i> Import Mappings
+                            </button>
+                        </div>
                     </form>
                 </div>
             </div>
@@ -398,6 +405,48 @@
     </div>
     
     @endif
+
+      <!-- Import Mappings Modal -->
+      <div class="modal fade" id="importMappingsModal" tabindex="-1">
+        <div class="modal-dialog modal-md modal-dialog-scrollable">
+          <div class="modal-content border-0 rounded-4 shadow-lg">
+
+            <div class="modal-header border-0 px-4 py-3" style="background: var(--primary);">
+              <div>
+                <h5 class="modal-title text-white fw-semibold mb-0">Import Subject Mappings</h5>
+              </div>
+              <div class="ms-auto me-3">
+                <a href="{{ route('institution.subject.manage.mapping.download_sample') }}" class="btn btn-light btn-sm rounded-pill px-3">
+                    <i class="fas fa-download me-1"></i> Sample Excel
+                </a>
+              </div>
+              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+
+            <form action="{{ route('institution.subject.manage.mapping.import') }}" method="POST" enctype="multipart/form-data" class="msc-ord-form" data-form-type="ADD">
+              @csrf
+              <div class="modal-body px-4 py-4">
+                <div class="row g-4 mb-4 align-items-center">
+                  <div class="col-md-12">
+                      <input type="file" id="excel_file" name="excel_file" class="msc-file-upload" required accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel">
+                  </div>
+                </div>
+                <div class="mt-4 p-3 rounded-3 bg-light border">
+                  <small class="text-muted">
+                    <strong>Excel Columns:</strong><br>
+                    course (Required), department, semester (Required), subject_codes (Required)
+                  </small>
+                </div>
+              </div>
+
+              <div class="modal-footer border-0 px-4 py-3 bg-light rounded-bottom-4">
+                <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-primary rounded-pill px-4">Start Import</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
 
 </div>
 

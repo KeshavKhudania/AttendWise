@@ -34,6 +34,7 @@ class Student extends Authenticatable
         'academic_year',
         'date_of_birth',
         'status',
+        'face_descriptor',
     ];
 
     protected $hidden = [

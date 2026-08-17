@@ -2,115 +2,114 @@
 <x-header heading="{{ $title }}" />
 
 <div class="aw-page-header mb-4">
-    <div class="d-flex justify-content-between align-items-center">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
         <div>
             <h1 class="page-heading mb-1">{{ $title }}</h1>
-            <p class="text-muted small mb-0">Define venue details and draw a geofence area on the map below.</p>
+            <p class="text-muted small mb-0">Define outdoor grounds, hostels, or open venues and configure geofence perimeter coordinates.</p>
         </div>
         <div>
-            <a href="{{ route('institution.venues.manage') }}" class="btn btn-light border d-flex align-items-center">
-                <i class="fa fa-arrow-left me-2"></i> Back to List
+            <a href="{{ route('institution.venues.manage') }}" class="btn btn-light border">
+                <i class="fa fa-arrow-left me-1.5 opacity-75"></i> Back to Venues
             </a>
         </div>
     </div>
 </div>
 
 <div class="col-lg-12 grid-margin stretch-card">
-    <div class="card shadow-sm border-0">
+    <div class="card aw-form-card shadow-sm border-0">
         <div class="card-body">
 
             <form action="{{ $action }}" method="POST" id="mainForm" data-form-type="{{ $type }}">
                 @csrf
+                @if(isset($type) && ($type === 'edit' || $type === 'EDIT'))
+                    @method('PUT')
+                @endif
 
                 <div class="row g-4">
-                    {{-- Basic Info Section --}}
+                    {{-- General Info Section --}}
                     <div class="col-md-12">
-                        <div class="d-flex align-items-center mb-3">
-                            <div class="bg-primary bg-opacity-10 text-primary rounded-circle p-2 me-3"
-                                style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">
-                                <i class="fa fa-info-circle small"></i>
+                        <div class="aw-form-section-header">
+                            <div class="aw-form-section-icon">
+                                <i class="fas fa-landmark"></i>
                             </div>
-                            <h6 class="mb-0 fw-bold">General Information</h6>
+                            <div>
+                                <h3 class="aw-form-section-title">Venue Identification</h3>
+                                <p class="aw-form-section-subtitle">Venue title, facility category, and optional notes</p>
+                            </div>
                         </div>
                     </div>
 
                     <div class="col-md-6">
-                        <label for="name" class="form-label fw-600">Venue Name <span
-                                class="text-danger">*</span></label>
-                        <input type="text" name="name" id="name" class="form-control msc-form-control" required
-                            placeholder="e.g. Cricket Ground, Boy's Hostel"
-                            value="{{ old('name', $venue->name ?? '') }}">
+                        <div class="aw-field-group">
+                            <label for="name" class="form-label aw-field-label">Venue Name <span class="aw-field-required">*</span></label>
+                            <input type="text" name="name" id="name" class="form-control" required
+                                placeholder="e.g. Football Ground / Hostel Block C"
+                                value="{{ old('name', $venue->name ?? '') }}">
+                        </div>
                     </div>
 
                     <div class="col-md-6">
-                        <label for="type" class="form-label fw-600">Venue Type <span
-                                class="text-danger">*</span></label>
-                        <select name="type" id="type" class="form-select msc-searchable" required>
-                            <option value="">-- Select Type --</option>
-                            <option value="Ground" {{ (old('type', $venue->type ?? '') == 'Ground') ? 'selected' : ''
-                                }}>Ground</option>
-                            <option value="Hostel" {{ (old('type', $venue->type ?? '') == 'Hostel') ? 'selected' : ''
-                                }}>Hostel</option>
-                            <option value="Auditorium" {{ (old('type', $venue->type ?? '') == 'Auditorium') ? 'selected'
-                                : '' }}>Auditorium</option>
-                            <option value="Canteen" {{ (old('type', $venue->type ?? '') == 'Canteen') ? 'selected' : ''
-                                }}>Canteen</option>
-                            <option value="Other" {{ (old('type', $venue->type ?? '') == 'Other') ? 'selected' : ''
-                                }}>Other</option>
-                        </select>
+                        <div class="aw-field-group">
+                            <label for="type" class="form-label aw-field-label">Venue Type <span class="aw-field-required">*</span></label>
+                            <select name="type" id="type" class="form-select msc-searchable" required>
+                                <option value="">-- Select Type --</option>
+                                <option value="Ground" {{ (old('type', $venue->type ?? '') == 'Ground') ? 'selected' : '' }}>Ground</option>
+                                <option value="Hostel" {{ (old('type', $venue->type ?? '') == 'Hostel') ? 'selected' : '' }}>Hostel</option>
+                                <option value="Auditorium" {{ (old('type', $venue->type ?? '') == 'Auditorium') ? 'selected' : '' }}>Auditorium</option>
+                                <option value="Canteen" {{ (old('type', $venue->type ?? '') == 'Canteen') ? 'selected' : '' }}>Canteen</option>
+                                <option value="Other" {{ (old('type', $venue->type ?? '') == 'Other') ? 'selected' : '' }}>Other</option>
+                            </select>
+                        </div>
                     </div>
 
                     <div class="col-md-12">
-                        <label for="description" class="form-label fw-600">Description</label>
-                        <textarea name="description" id="description" class="form-control msc-form-control" rows="2"
-                            placeholder="Brief details about the venue">{{ old('description', $venue->description ?? '') }}</textarea>
+                        <div class="aw-field-group">
+                            <label for="description" class="form-label aw-field-label">Description</label>
+                            <textarea name="description" id="description" class="form-control" rows="2"
+                                placeholder="Brief details regarding capacity, entrance gates, or special instructions">{{ old('description', $venue->description ?? '') }}</textarea>
+                        </div>
                     </div>
 
                     {{-- Geofence Area Section --}}
-                    <div class="col-md-12 mt-5">
-                        <div class="d-flex align-items-center mb-1">
-                            <div class="bg-danger bg-opacity-10 text-danger rounded-circle p-2 me-3"
-                                style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">
-                                <i class="fa fa-map-marker-alt small"></i>
+                    <div class="col-md-12 mt-4">
+                        <div class="aw-form-section-header">
+                            <div class="aw-form-section-icon">
+                                <i class="fas fa-map-marked-alt"></i>
                             </div>
-                            <h6 class="mb-0 fw-bold">Venue Area / Geofence</h6>
-                        </div>
-                        <p class="text-muted small ms-5 mb-3">Define the perimeter by clicking on the map to create
-                            points of a polygon.</p>
-
-                        <div id="map" style="height:480px; border-radius:16px; border: 1px solid var(--aw-gray-200);"
-                            class="shadow-sm"></div>
-
-                        <div id="latlngRows" class="mt-4 row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3"></div>
-
-                        <div class="mt-4 p-3 bg-light rounded-3 d-flex flex-wrap gap-2 align-items-center">
-                            <button type="button" class="btn btn-white shadow-xs border btn-sm py-2 px-3 fw-600"
-                                onclick="addRowFromGPS()">
-                                <i class="fa fa-crosshairs me-2 text-primary"></i> Add Current Location
-                            </button>
-                            <button type="button"
-                                class="btn btn-white shadow-xs border btn-sm py-2 px-3 fw-600 text-danger"
-                                onclick="clearPoints()">
-                                <i class="fa fa-trash-alt me-2"></i> Clear All Points
-                            </button>
-                            <div class="ms-auto text-muted small">
-                                <i class="fa fa-info-circle me-1"></i> Minimum 3 points required for a valid geofence.
+                            <div>
+                                <h3 class="aw-form-section-title">Venue Area & Geofence Boundary</h3>
+                                <p class="aw-form-section-subtitle">Click the map or fetch current GPS coordinates to set boundary polygon vertices</p>
                             </div>
                         </div>
-
-                        {{-- Hidden JSON field --}}
-                        <input type="hidden" name="latlng" id="latlng"
-                            value="{{ old('latlng', is_array($venue->latlng ?? null) ? json_encode($venue->latlng) : ($venue->latlng ?? '')) }}">
                     </div>
 
-                    <div class="form-actions-bar">
-                        <div class="container-fluid d-flex justify-content-end align-items-center">
-                            <a href="{{ route('institution.venues.manage') }}"
-                                class="btn btn-light me-3 px-4 py-2 border">Cancel</a>
-                            <button type="submit" class="btn btn-primary px-5 py-2 fw-bold shadow-sm">
-                                <i class="fa fa-save me-2"></i> {{ $type == 'ADD' ? 'Create Venue' : 'Save Changes' }}
-                            </button>
+                    <div class="col-md-12">
+                        <div class="border rounded p-2 bg-light">
+                            <div id="map" style="height:450px; border-radius:8px;" class="shadow-sm"></div>
+
+                            <div id="latlngRows" class="mt-3 row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3"></div>
+
+                            <div class="mt-3 p-2 bg-white border rounded d-flex flex-wrap gap-2 align-items-center">
+                                <button type="button" class="btn btn-outline-primary btn-sm" onclick="addRowFromGPS()">
+                                    <i class="fas fa-location-arrow me-1"></i> Add GPS Point
+                                </button>
+                                <button type="button" class="btn btn-outline-danger btn-sm" onclick="clearPoints()">
+                                    <i class="fas fa-trash-alt me-1"></i> Clear All Points
+                                </button>
+                                <div class="ms-auto text-muted small">
+                                    <i class="fas fa-info-circle me-1"></i> Minimum 3 points required for geofencing.
+                                </div>
+                            </div>
+
+                            {{-- Hidden JSON field --}}
+                            <input type="hidden" name="latlng" id="latlng"
+                                value="{{ old('latlng', is_array($venue->latlng ?? null) ? json_encode($venue->latlng) : ($venue->latlng ?? '')) }}">
                         </div>
+                    </div>
+
+                    {{-- Buttons --}}
+                    <div class="col-md-12">
+                        <x-form-buttons />
                     </div>
                 </div>
             </form>
@@ -121,7 +120,7 @@
 <script>
     document.addEventListener('DOMContentLoaded', function () {
 
-        const map = L.map('map').setView([20.5937, 78.9629], 5); // Default India view
+        const map = L.map('map').setView([20.5937, 78.9629], 5);
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; OpenStreetMap contributors'
@@ -237,7 +236,7 @@
             if (polygon) map.removeLayer(polygon);
             if (points.length >= 3) {
                 polygon = L.polygon(points, {
-                    color: '#dc3545', // Danger theme for venues
+                    color: '#4f46e5',
                     fillOpacity: 0.15,
                     weight: 2
                 }).addTo(map);

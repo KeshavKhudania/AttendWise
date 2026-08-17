@@ -12,7 +12,8 @@
             --text-muted: #6b7280;
             --border: #e5e7eb;
             --subtle-bg: #f9fafb;
-            --primary: #000000;
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
         }
 
         :root[data-theme="dark"] {
@@ -21,7 +22,8 @@
             --text-muted: #888888;
             --border: #222222;
             --subtle-bg: #0a0a0a;
-            --primary: #ffffff;
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
         }
 
         * {
@@ -101,23 +103,24 @@
             width: 100%;
             padding: 0.8rem;
             background: var(--primary);
-            color: var(--bg);
-            border: 1px solid var(--primary);
+            color: #ffffff;
+            border: none;
             border-radius: 0.6rem;
             font-weight: 700;
             font-size: 0.95rem;
             cursor: pointer;
             transition: all 0.2s;
             margin-top: 1rem;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
         }
 
-        .btn-login:hover { opacity: 0.9; }
+        .btn-login:hover { background: var(--primary-hover); }
 
         .error-msg {
-            color: #ef4444;
+            color: var(--text-main);
             font-size: 0.75rem;
             margin-top: 0.5rem;
-            font-weight: 500;
+            font-weight: 700;
         }
 
         /* Float Theme Toggle */

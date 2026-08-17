@@ -482,4 +482,22 @@ class DashboardController extends Controller
             'roll_number' => $student->roll_number
         ]);
     }
+
+    public function qrRequestFacial(Request $request)
+    {
+        $faculty = Auth::guard('faculty')->user();
+        $sessionUuid = $request->uuid;
+        
+        $session = AttendanceSession::where('uuid', $sessionUuid)
+            ->where('faculty_id', $faculty->id)
+            ->firstOrFail();
+
+        try {
+            event(new \App\Events\LiveAttendanceAction($session->uuid, 'facial_scan_requested', []));
+        } catch (\Exception $e) {
+            Log::warning('WebSocket broadcast failed: ' . $e->getMessage());
+        }
+
+        return response()->json(['success' => true]);
+    }
 }

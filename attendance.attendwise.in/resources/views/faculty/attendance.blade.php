@@ -48,7 +48,7 @@
                 <form id="reset-session-form" action="{{ route('faculty.attendance.reset') }}" method="POST">
                     @csrf
                     <input type="hidden" name="schedule_id" value="{{ $selectedSchedule->id }}">
-                    <button type="button" onclick="showResetModal()" class="btn-primary" style="background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; font-size: 0.85rem;">
+                    <button type="button" onclick="showResetModal()" class="btn-primary" style="background: var(--subtle-bg); color: var(--text-main); border: 1px solid var(--border); font-size: 0.85rem;">
                         <i data-lucide="rotate-ccw" style="width: 14px;"></i>
                         Reset Session
                     </button>
@@ -74,7 +74,7 @@
             <div class="methods-grid">
                 <!-- QR Code Option -->
                 <div onclick="selectMethod('qr')" class="method-card" id="qr-card">
-                    <div class="icon-box" style="background: rgba(99, 102, 241, 0.1); color: #6366f1;">
+                    <div class="icon-box" style="background: var(--subtle-bg); color: var(--text-main); border: 1px solid var(--border);">
                         <i data-lucide="qr-code" style="width: 24px; height: 24px;"></i>
                     </div>
                     <h3 style="font-size: 1rem; font-weight: 700; margin-bottom: 0.5rem;">QR Code</h3>
@@ -83,7 +83,7 @@
 
                 <!-- Geo Location Option -->
                 <div onclick="selectMethod('geo')" class="method-card" id="geo-card">
-                    <div class="icon-box" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">
+                    <div class="icon-box" style="background: var(--subtle-bg); color: var(--text-main); border: 1px solid var(--border);">
                         <i data-lucide="map-pin" style="width: 24px; height: 24px;"></i>
                     </div>
                     <h3 style="font-size: 1rem; font-weight: 700; margin-bottom: 0.5rem;">Geo Location</h3>
@@ -92,7 +92,7 @@
 
                 <!-- Manual Option -->
                 <div onclick="selectMethod('manual')" class="method-card" id="manual-card">
-                    <div class="icon-box" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;">
+                    <div class="icon-box" style="background: var(--subtle-bg); color: var(--text-main); border: 1px solid var(--border);">
                         <i data-lucide="user-check" style="width: 24px; height: 24px;"></i>
                     </div>
                     <h3 style="font-size: 1rem; font-weight: 700; margin-bottom: 0.5rem;">Manual</h3>
@@ -130,7 +130,7 @@
                         
                         <div class="switch-container">
                             <div style="display: flex; align-items: center; gap: 0.75rem;">
-                                <i data-lucide="map" style="width: 16px; color: #10b981;"></i>
+                                <i data-lucide="map" style="width: 16px; color: var(--text-main);"></i>
                                 <span style="font-size: 0.85rem; font-weight: 600;">GeoFencing Range</span>
                             </div>
                             <label class="switch">
@@ -141,7 +141,7 @@
 
                         <div class="switch-container">
                             <div style="display: flex; align-items: center; gap: 0.75rem;">
-                                <i data-lucide="bluetooth" style="width: 16px; color: #6366f1;"></i>
+                                <i data-lucide="bluetooth" style="width: 16px; color: var(--text-main);"></i>
                                 <span style="font-size: 0.85rem; font-weight: 600;">Bluetooth Proximity</span>
                             </div>
                             <label class="switch">
@@ -150,12 +150,12 @@
                             </label>
                         </div>
 
-                        <button type="button" class="btn-primary" style="width: 100%; margin-top: 1rem; padding: 0.75rem; background: #000; color: #fff; border: none; border-radius: 0.75rem; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 0.75rem;">
+                        <button type="button" onclick="requestFacialScan(this)" class="btn-primary" style="width: 100%; margin-top: 1rem; padding: 0.75rem; background: #000; color: #fff; border: none; border-radius: 0.75rem; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 0.75rem;">
                             <i data-lucide="scan-eye" style="width: 18px;"></i>
-                            Start Face Recognition
+                            <span>Start Face Recognition</span>
                         </button>
 
-                        <button type="button" onclick="startOcrScanner()" class="btn-primary" style="width: 100%; margin-top: 0.75rem; padding: 0.75rem; background: #4f46e5; color: #fff; border: none; border-radius: 0.75rem; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 0.75rem; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);">
+                        <button type="button" onclick="startOcrScanner()" class="btn-primary" style="width: 100%; margin-top: 0.75rem; padding: 0.75rem; background: var(--text-main); color: var(--bg); border: none; border-radius: 0.75rem; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 0.75rem;">
                             <i data-lucide="scan-text" style="width: 18px;"></i>
                             Scan ID via OCR
                         </button>
@@ -177,11 +177,11 @@
                 <div style="padding: 1.5rem 2rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
                     <div style="display: flex; align-items: center; gap: 0.75rem;">
                         <h3 style="font-size: 1rem; font-weight: 700;">Live Feed</h3>
-                        <button type="button" onclick="syncStudents(true)" title="Force Refresh Attendance Feed" style="background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.2); cursor: pointer; color: #6366f1; display: flex; align-items: center; justify-content: center; padding: 6px; border-radius: 0.4rem; transition: background 0.2s;">
+                        <button type="button" onclick="syncStudents(true)" title="Force Refresh Attendance Feed" style="background: var(--subtle-bg); border: 1px solid var(--border); cursor: pointer; color: var(--text-main); display: flex; align-items: center; justify-content: center; padding: 6px; border-radius: 0.4rem; transition: background 0.2s;">
                             <i data-lucide="refresh-cw" style="width: 14px; height: 14px;" id="sync-refresh-icon"></i>
                         </button>
                     </div>
-                    <span id="present-count-badge" style="background: rgba(16, 185, 129, 0.1); color: #10b981; padding: 0.25rem 0.75rem; border-radius: 2rem; font-size: 0.75rem; font-weight: 700;">0 Scanned</span>
+                    <span id="present-count-badge" style="background: var(--subtle-bg); color: var(--text-main); padding: 0.25rem 0.75rem; border-radius: 2rem; font-size: 0.75rem; font-weight: 700; border: 1px solid var(--border);">0 Scanned</span>
                 </div>
                 <div style="padding: 1rem 2rem; border-bottom: 1px solid var(--border); background: var(--subtle-bg);">
                     <div style="position: relative;">
@@ -197,7 +197,7 @@
                             <div style="font-size: 0.9rem; font-weight: 600; color: var(--text-main);">{{ $student->name }}</div>
                             <div style="font-size: 0.75rem; color: var(--text-muted);">{{ $student->roll_number }}</div>
                         </div>
-                        <div class="check-icon" style="display: none; color: #10b981;">
+                        <div class="check-icon" style="display: none; color: var(--text-main);">
                             <i data-lucide="check-circle-2" style="width: 18px;"></i>
                         </div>
                     </div>
@@ -291,10 +291,10 @@
 <!-- Custom Reset Confirmation Modal -->
 <div id="reset-modal-overlay" style="position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(8px); z-index: 10000; display: none; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s ease;">
     <div class="card" style="width: 100%; max-width: 420px; padding: 2.5rem; background: #ffffff; border: 1px solid #e2e8f0; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); border-radius: 1.5rem; position: relative; text-align: center; transform: scale(0.95); transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);" id="reset-modal-card">
-        <div class="warning-icon-pulse" style="width: 64px; height: 64px; border-radius: 50%; background: #fee2e2; color: #dc2626; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem auto;">
+        <div class="warning-icon-pulse" style="width: 64px; height: 64px; border-radius: 50%; background: var(--subtle-bg); color: var(--text-main); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem auto;">
             <i data-lucide="alert-triangle" style="width: 32px; height: 32px;"></i>
         </div>
-        <h2 style="font-size: 1.35rem; font-weight: 800; color: #0f172a; margin-bottom: 0.75rem;">Reset Attendance?</h2>
+        <h2 style="font-size: 1.35rem; font-weight: 800; color: var(--text-main); margin-bottom: 0.75rem;">Reset Attendance?</h2>
         <p style="color: #64748b; font-size: 0.9rem; line-height: 1.5; margin-bottom: 2rem;">
             This action will cancel all current attendance records for this session. Students will need to scan the QR code again.
         </p>
@@ -312,10 +312,10 @@
 <!-- Custom Close Session Confirmation Modal -->
 <div id="close-modal-overlay" style="position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(8px); z-index: 10000; display: none; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s ease;">
     <div class="card" style="width: 100%; max-width: 420px; padding: 2.5rem; background: #ffffff; border: 1px solid #e2e8f0; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); border-radius: 1.5rem; position: relative; text-align: center; transform: scale(0.95); transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);" id="close-modal-card">
-        <div class="warning-icon-pulse" style="width: 64px; height: 64px; border-radius: 50%; background: rgba(99, 102, 241, 0.1); color: #6366f1; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem auto;">
+        <div class="warning-icon-pulse" style="width: 64px; height: 64px; border-radius: 50%; background: var(--subtle-bg); color: var(--text-main); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem auto;">
             <i data-lucide="help-circle" style="width: 32px; height: 32px;"></i>
         </div>
-        <h2 style="font-size: 1.35rem; font-weight: 800; color: #0f172a; margin-bottom: 0.75rem;">End Active Session?</h2>
+        <h2 style="font-size: 1.35rem; font-weight: 800; color: var(--text-main); margin-bottom: 0.75rem;">End Active Session?</h2>
         <p style="color: #64748b; font-size: 0.9rem; line-height: 1.5; margin-bottom: 2rem;">
             Are you sure you want to end this attendance session? Students will no longer be able to submit their attendance.
         </p>
@@ -338,7 +338,7 @@
         </button>
         
         <h2 style="font-size: 1.25rem; font-weight: 800; color: var(--text-main); margin-bottom: 0.25rem; text-align: left; display: flex; align-items: center; gap: 0.5rem;">
-            <i data-lucide="scan-text" style="color: #4f46e5; width: 22px; height: 22px;"></i>
+            <i data-lucide="scan-text" style="color: var(--text-main); width: 22px; height: 22px;"></i>
             Scan Student ID Card
         </h2>
         <p style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 1.25rem; text-align: left;">
@@ -350,17 +350,17 @@
             <video id="ocr-video" autoplay playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>
             
             <!-- Scanning Guidelines Overlay -->
-            <div style="position: absolute; inset: 2rem; border: 2px dashed rgba(79, 70, 229, 0.6); border-radius: 0.5rem; pointer-events: none; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.4);">
+            <div style="position: absolute; inset: 2rem; border: 2px dashed #ffffff; border-radius: 0.5rem; pointer-events: none; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.4);">
                 <!-- Laser Scanning Line -->
-                <div class="ocr-scanner-line" style="position: absolute; left: 0; right: 0; height: 2px; background: #4f46e5; box-shadow: 0 0 10px #4f46e5; animation: scanLine 2s linear infinite;"></div>
+                <div class="ocr-scanner-line" style="position: absolute; left: 0; right: 0; height: 2px; background: #ffffff; box-shadow: 0 0 10px #ffffff; animation: scanLine 2s linear infinite;"></div>
             </div>
         </div>
         
         <!-- Status & Detections -->
         <div style="margin-top: 1rem; display: flex; flex-direction: column; gap: 0.5rem; text-align: left;">
             <div style="display: flex; justify-content: space-between; align-items: center;">
-                <span id="ocr-status" style="font-size: 0.8rem; font-weight: 600; color: #4f46e5;">Initializing...</span>
-                <span id="ocr-loader-spinner" style="display: none; width: 14px; height: 14px; border: 2px solid rgba(79, 70, 229, 0.2); border-top-color: #4f46e5; border-radius: 50%; animation: spin 0.8s linear infinite;"></span>
+                <span id="ocr-status" style="font-size: 0.8rem; font-weight: 600; color: var(--text-main);">Initializing...</span>
+                <span id="ocr-loader-spinner" style="display: none; width: 14px; height: 14px; border: 2px solid var(--border); border-top-color: var(--text-main); border-radius: 50%; animation: spin 0.8s linear infinite;"></span>
             </div>
             
             <div style="background: var(--subtle-bg); border: 1px solid var(--border); border-radius: 0.75rem; padding: 0.75rem; min-height: 50px; font-family: monospace; font-size: 0.75rem; color: var(--text-muted); word-break: break-all; max-height: 70px; overflow-y: auto;" id="ocr-detected-text">
@@ -373,23 +373,22 @@
             <label style="font-size: 0.7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Manual Verification / Correction</label>
             <div style="display: flex; gap: 0.5rem; width: 100%;">
                 <input type="text" id="ocr-roll-input" placeholder="Roll Number (e.g. RW000001)" style="flex: 1; padding: 0.75rem; border: 1px solid var(--border); border-radius: 0.75rem; background: var(--bg); color: var(--text-main); font-size: 0.9rem; font-weight: 600; text-transform: uppercase;">
-                <button type="button" onclick="submitManualOcr()" class="btn-primary" style="padding: 0.75rem 1.25rem; border-radius: 0.75rem; background: #4f46e5; color: #fff; border: none; font-weight: 600; display: flex; align-items: center; justify-content: center;">
+                <button type="button" onclick="submitManualOcr()" class="btn-primary" style="padding: 0.75rem 1.25rem; border-radius: 0.75rem; background: var(--text-main); color: var(--bg); border: none; font-weight: 600; display: flex; align-items: center; justify-content: center;">
                     Mark Present
                 </button>
             </div>
-            <div id="ocr-error-msg" style="color: #ef4444; font-size: 0.75rem; display: none;"></div>
-            <div id="ocr-success-msg" style="color: #10b981; font-size: 0.75rem; display: none;"></div>
+            <div id="ocr-error-msg" style="color: var(--text-main); font-weight: 700; font-size: 0.75rem; display: none;"></div>
+            <div id="ocr-success-msg" style="color: var(--text-main); font-weight: 700; font-size: 0.75rem; display: none;"></div>
         </div>
     </div>
 </div>
 
 <style>
     /* Reset Modal Styles */
-    .btn-reset-confirm {
-        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-        color: white;
+    .btn-reset-confirm, .btn-close-confirm {
+        background: var(--text-main);
+        color: var(--bg);
         border: none;
-        box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);
         font-weight: 700;
         display: flex;
         justify-content: center;
@@ -397,33 +396,14 @@
         text-align: center;
         transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     }
-    .btn-reset-confirm:hover {
+    .btn-reset-confirm:hover, .btn-close-confirm:hover {
         transform: translateY(-2px);
-        box-shadow: 0 6px 16px rgba(220, 38, 38, 0.35);
-        background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
-    }
-    .btn-close-confirm {
-        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-        color: white;
-        border: none;
-        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
-        font-weight: 700;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        text-align: center;
-        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    .btn-close-confirm:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35);
-        background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+        opacity: 0.9;
     }
     .btn-reset-cancel {
-        background: #ffffff;
-        color: #475569;
-        border: 1px solid #e2e8f0;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        background: transparent;
+        color: var(--text-main);
+        border: 1px solid var(--border);
         font-weight: 700;
         display: flex;
         justify-content: center;
@@ -432,14 +412,12 @@
         transition: all 0.2s ease;
     }
     .btn-reset-cancel:hover {
-        background: #f8fafc;
-        border-color: #cbd5e1;
-        color: #1e293b;
+        background: var(--subtle-bg);
     }
     @keyframes pulse-red {
-        0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4); }
-        70% { box-shadow: 0 0 0 10px rgba(220, 38, 38, 0); }
-        100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+        0% { box-shadow: 0 0 0 0 rgba(0, 0, 0, 0.1); }
+        70% { box-shadow: 0 0 0 10px rgba(0, 0, 0, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(0, 0, 0, 0); }
     }
     .warning-icon-pulse {
         animation: pulse-red 2s infinite;
@@ -471,9 +449,9 @@
         display: inline-block;
         color: var(--text-muted);
     }
-    .status-radio:checked + .p-btn { background: #10b981; color: white; }
-    .status-radio:checked + .a-btn { background: #ef4444; color: white; }
-    .status-radio:checked + .l-btn { background: #f59e0b; color: white; }
+    .status-radio:checked + .p-btn { background: var(--text-main); color: var(--bg); }
+    .status-radio:checked + .a-btn { background: var(--text-main); color: var(--bg); }
+    .status-radio:checked + .l-btn { background: var(--text-main); color: var(--bg); }
 
     /* Toggle Switch Styles */
     .switch-container {
@@ -514,7 +492,7 @@
         transition: .4s;
         border-radius: 50%;
     }
-    input:checked + .slider { background-color: #10b981; }
+    input:checked + .slider { background-color: var(--text-main); }
     input:checked + .slider:before { transform: translateX(16px); }
     
     @keyframes spin { 100% { transform: rotate(360deg); } }
@@ -832,6 +810,36 @@
         showCloseModal();
     }
 
+    function requestFacialScan(btn) {
+        if (!currentSessionUuid) return alert('Session is not active.');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Requesting...';
+        btn.disabled = true;
+
+        fetch('{{ route("faculty.attendance.qr.request_facial") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({ uuid: currentSessionUuid })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                btn.innerHTML = '<i class="fa-solid fa-check"></i> Request Sent';
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }, 3000);
+            }
+        })
+        .catch(err => {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        });
+    }
+
     function executeCloseAttendanceSession() {
         fetch('{{ route("faculty.attendance.qr.close") }}', {
             method: 'POST',
@@ -978,6 +986,22 @@
             ocrStream = await navigator.mediaDevices.getUserMedia({ 
                 video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } } 
             });
+
+            // Attempt to enable continuous focus mode for better OCR text scanning
+            const track = ocrStream.getVideoTracks()[0];
+            if (track && typeof track.getCapabilities === 'function') {
+                const capabilities = track.getCapabilities();
+                if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
+                    try {
+                        await track.applyConstraints({
+                            advanced: [{ focusMode: 'continuous' }]
+                        });
+                    } catch (err) {
+                        console.warn("Failed to apply continuous focus:", err);
+                    }
+                }
+            }
+
             const video = document.getElementById('ocr-video');
             video.srcObject = ocrStream;
             video.setAttribute('playsinline', true);

@@ -4,33 +4,33 @@
 
 @section('styles')
 <style>
-    /* Override background for Light Theme on Login Page */
+    /* Premium Black & White Theme */
     body {
         background-color: #f8fafc !important;
         color: #0f172a !important;
         background-image: 
-            radial-gradient(circle at 10% 15%, rgba(99, 102, 241, 0.1) 0%, transparent 45%),
-            radial-gradient(circle at 90% 85%, rgba(14, 165, 233, 0.1) 0%, transparent 45%) !important;
+            radial-gradient(circle at 10% 15%, rgba(99, 102, 241, 0.05) 0%, transparent 45%),
+            radial-gradient(circle at 90% 85%, rgba(59, 130, 246, 0.05) 0%, transparent 45%) !important;
     }
 
     .app-topbar {
-        background: rgba(255, 255, 255, 0.85) !important;
-        border-bottom: 1px solid #e2e8f0 !important;
+        background: rgba(255, 255, 255, 0.9) !important;
+        border-bottom: 1px solid #eaeaea !important;
     }
 
     .brand-title {
-        background: linear-gradient(135deg, #0f172a 0%, #334155 100%) !important;
-        -webkit-background-clip: text !important;
-        -webkit-text-fill-color: transparent !important;
+        color: #000000 !important;
+        background: none !important;
+        -webkit-text-fill-color: initial !important;
     }
 
-    /* Light Theme Glass Card */
+    /* Grayscale Glass Card */
     .light-login-card {
         background: #ffffff;
-        border: 1px solid rgba(226, 232, 240, 0.9);
+        border: 1px solid #e0e0e0;
         border-radius: 28px;
         padding: 32px 26px;
-        box-shadow: 0 20px 40px -15px rgba(99, 102, 241, 0.12), 0 1px 3px rgba(0, 0, 0, 0.05);
+        box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.05);
         position: relative;
         overflow: hidden;
     }
@@ -43,18 +43,17 @@
         transform: translateX(-50%);
         width: 180px;
         height: 180px;
-        background: rgba(99, 102, 241, 0.15);
-        filter: blur(50px);
+        background: radial-gradient(circle, rgba(99, 102, 241, 0.25) 0%, rgba(99, 102, 241, 0) 70%);
         border-radius: 50%;
         pointer-events: none;
     }
 
-    /* Light Form Inputs */
+    /* Grayscale Form Inputs */
     .form-label-light {
         display: block;
         font-size: 0.76rem;
         font-weight: 700;
-        color: #475569;
+        color: #555555;
         margin-bottom: 6px;
         text-transform: uppercase;
         letter-spacing: 0.6px;
@@ -69,18 +68,18 @@
         left: 14px;
         top: 50%;
         transform: translateY(-50%);
-        color: #94a3b8;
+        color: #888888;
         font-size: 0.95rem;
         transition: color 0.2s ease;
     }
 
     .input-field-light {
         width: 100%;
-        background: #f8fafc;
-        border: 1px solid #cbd5e1;
+        background: #f9f9f9;
+        border: 1px solid #d4d4d4;
         border-radius: 14px;
         padding: 13px 14px 13px 42px;
-        color: #0f172a;
+        color: #000000;
         font-size: 0.92rem;
         font-weight: 500;
         outline: none;
@@ -88,23 +87,23 @@
     }
 
     .input-field-light::placeholder {
-        color: #94a3b8;
+        color: #999999;
     }
 
     .input-field-light:focus {
         background: #ffffff;
-        border-color: #6366f1;
-        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.12);
+        border-color: #000000;
+        box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.08);
     }
 
     .input-field-light:focus + .input-icon-light,
     .input-wrapper-light:focus-within .input-icon-light {
-        color: #4f46e5;
+        color: #000000;
     }
 
-    /* Light Buttons */
+    /* Colorful Buttons */
     .btn-light-submit {
-        background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+        background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
         color: #ffffff;
         border: none;
         border-radius: 14px;
@@ -117,12 +116,13 @@
         align-items: center;
         justify-content: center;
         gap: 8px;
-        box-shadow: 0 8px 20px rgba(79, 70, 229, 0.25);
+        box-shadow: 0 8px 20px rgba(79, 70, 229, 0.3);
         transition: all 0.2s ease;
     }
 
     .btn-light-submit:hover {
-        box-shadow: 0 10px 25px rgba(79, 70, 229, 0.35);
+        background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+        box-shadow: 0 10px 25px rgba(79, 70, 229, 0.4);
         transform: translateY(-1px);
     }
 
@@ -132,9 +132,9 @@
 
     .btn-demo-light {
         width: 100%;
-        background: rgba(99, 102, 241, 0.06);
-        border: 1px dashed rgba(99, 102, 241, 0.4);
-        color: #4f46e5;
+        background: #f5f5f5;
+        border: 1px dashed #cccccc;
+        color: #333333;
         border-radius: 14px;
         padding: 12px;
         font-weight: 700;
@@ -148,8 +148,9 @@
     }
 
     .btn-demo-light:hover {
-        background: rgba(99, 102, 241, 0.12);
-        border-color: #4f46e5;
+        background: #eeeeee;
+        border-color: #999999;
+        color: #000000;
     }
 
     /* Faculty Link Pill Button */
@@ -158,8 +159,8 @@
         align-items: center;
         gap: 8px;
         background: #ffffff;
-        border: 1px solid #e2e8f0;
-        color: #4f46e5;
+        border: 1px solid #dddddd;
+        color: #000000;
         text-decoration: none;
         padding: 8px 14px;
         border-radius: 16px;
@@ -170,9 +171,9 @@
     }
 
     .faculty-link-pill:hover {
-        background: #f8fafc;
-        border-color: #cbd5e1;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        background: #f7f7f7;
+        border-color: #bbbbbb;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
         transform: translateY(-1px);
     }
 </style>
@@ -184,14 +185,14 @@
     <!-- Top Navigation Header with Faculty Link -->
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding: 0 4px;">
         <div style="display: flex; align-items: center; gap: 6px;">
-            <span style="width: 8px; height: 8px; border-radius: 50%; background: #10b981; display: inline-block;"></span>
-            <span style="font-size: 0.78rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Student PWA</span>
+            <span style="width: 8px; height: 8px; border-radius: 50%; background: #6366f1; display: inline-block;"></span>
+            <span style="font-size: 0.78rem; font-weight: 700; color: #555555; text-transform: uppercase; letter-spacing: 0.5px;">Student PWA</span>
         </div>
 
         <a href="{{ route('faculty.login') }}" class="faculty-link-pill">
             <i class="fa-solid fa-chalkboard-user"></i>
             <span>Faculty Login</span>
-            <i class="fa-solid fa-chevron-right" style="font-size: 0.7rem; color: #94a3b8;"></i>
+            <i class="fa-solid fa-chevron-right" style="font-size: 0.7rem; color: #888888;"></i>
         </a>
     </div>
 
@@ -200,19 +201,18 @@
         <div class="light-glow-header"></div>
 
         <!-- Brand Icon / App Logo Badge -->
-        <div style="width: 72px; height: 72px; border-radius: 22px; background: #ffffff; border: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px auto; padding: 10px; box-shadow: 0 10px 25px rgba(79, 70, 229, 0.15);">
-            <img src="{{ asset('assets/images/logo.png') }}" alt="AttendWise Logo" style="max-width: 100%; max-height: 100%; object-fit: contain;">
-        </div>
-
         <div style="text-align: center; margin-bottom: 24px;">
-            <h2 style="font-weight: 800; font-size: 1.55rem; color: #0f172a; margin-bottom: 6px; letter-spacing: -0.5px;">Student Portal</h2>
-            <p style="color: #64748b; font-size: 0.88rem; font-weight: 500;">Sign in to mark attendance via dynamic QR code</p>
+            <div style="width: 56px; height: 56px; background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); border-radius: 18px; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; color: #ffffff; box-shadow: 0 10px 25px rgba(79, 70, 229, 0.3); margin: 0 auto 16px auto; transform: rotate(-5deg);">
+                <i class="fa-solid fa-graduation-cap" style="transform: rotate(5deg);"></i>
+            </div>
+            <h2 style="font-weight: 800; font-size: 1.4rem; color: #0f172a; margin-bottom: 4px; letter-spacing: -0.5px;">Student Login</h2>
+            <p style="color: #666666; font-size: 0.88rem; font-weight: 500;">Sign in to mark attendance via dynamic QR code</p>
         </div>
 
         <!-- Error Alert -->
         @if ($errors->any())
-        <div style="background: #fef2f2; border: 1px solid #fca5a5; border-radius: 16px; padding: 12px 14px; color: #991b1b; font-size: 0.85rem; text-align: left; margin-bottom: 20px; display: flex; align-items: flex-start; gap: 10px;">
-            <i class="fa-solid fa-circle-exclamation" style="font-size: 1.1rem; color: #ef4444; margin-top: 2px;"></i>
+        <div style="background: #f5f5f5; border: 1px solid #cccccc; border-radius: 16px; padding: 12px 14px; color: #000000; font-size: 0.85rem; text-align: left; margin-bottom: 20px; display: flex; align-items: flex-start; gap: 10px;">
+            <i class="fa-solid fa-circle-exclamation" style="font-size: 1.1rem; color: #333333; margin-top: 2px;"></i>
             <div style="font-weight: 600;">{{ $errors->first() }}</div>
         </div>
         @endif
@@ -261,8 +261,8 @@
         </button>
 
         <!-- Single Device Security Footer Badge -->
-        <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #f1f5f9; font-size: 0.76rem; color: #64748b; display: flex; align-items: center; justify-content: center; gap: 6px;">
-            <i class="fa-solid fa-shield-halved" style="color: #4f46e5;"></i>
+        <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #eeeeee; font-size: 0.76rem; color: #666666; display: flex; align-items: center; justify-content: center; gap: 6px;">
+            <i class="fa-solid fa-shield-halved" style="color: #000000;"></i>
             <span>Single-device session protection active</span>
         </div>
     </div>

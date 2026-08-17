@@ -73,12 +73,13 @@
         width: 3px;
         height: 0%;
         border-radius: 0 4px 4px 0;
-        background: #10b981;
+        background: #3b82f6;
         transition: height 0.3s ease;
     }
     
     .lecture-item.taken .lecture-status-indicator {
         height: 60%;
+        background: #10b981;
     }
 
     .lecture-item.pending .lecture-status-indicator {

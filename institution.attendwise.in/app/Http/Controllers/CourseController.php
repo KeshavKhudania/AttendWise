@@ -100,4 +100,44 @@ class CourseController extends Controller
             return abort(401);
         }
     }
+
+    public function import(Request $request)
+    {
+        $request->validate([
+            'excel_file' => 'required|file|mimes:csv,txt,xlsx,xls',
+        ]);
+
+        $path = $request->file('excel_file')->store('imports/courses');
+
+        \App\Jobs\ImportCoursesJob::dispatch($path, get_logged_in_user()->institution_id);
+
+        return response()->json([
+            "msg" => "Course import job has been queued. You will be notified once it's completed.",
+            "color" => "success",
+            "icon" => "check-circle"
+        ]);
+    }
+
+    public function downloadSample()
+    {
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="courses_import_sample.csv"',
+        ];
+
+        $callback = function() {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, [
+                'name (Required)', 'code', 'level', 'batch', 'duration_years', 'description', 'course_type', 'total_credits', 'department'
+            ]);
+            
+            fputcsv($file, [
+                'B.Tech Computer Science', 'BTech-CS', 'UG', '2023', '4', 'Undergraduate computer science program', 'Degree', '160', 'Computer Science'
+            ]);
+            
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
 }

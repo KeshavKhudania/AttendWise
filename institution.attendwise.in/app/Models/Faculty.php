@@ -14,11 +14,12 @@ class Faculty extends Model
     use SoftDeletes;
     protected $table = 'institution_faculties';
     protected $casts = [
-        "password"=>Encrypted::class,
-        "designation"=>Encrypted::class,
+        "password"      => Encrypted::class,
+        "designation"   => Encrypted::class,
         // "date_of_birth"=>Encrypted::class,
-        "email"=>EncryptAndHash::class,
-        "mobile"=>EncryptAndHash::class,
+        "email"         => EncryptAndHash::class,
+        "mobile"        => EncryptAndHash::class,
+        "working_days"  => 'array',
     ];
     protected $guarded = ["id"];
     function institution(){

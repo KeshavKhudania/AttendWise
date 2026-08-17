@@ -162,20 +162,50 @@ class HomeController extends Controller
                 ->orderBy('created_at', 'desc')
                 ->get(),
             "analytics" => [
-                "attendance" => [
-                    "labels" => ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
-                    "data" => [85, 88, 76, 92, 90, 82]
-                ],
-                "enrollment" => [
-                    "labels" => ['Engineering', 'Science', 'Arts', 'Commerce', 'Law'],
-                    "data" => [450, 320, 150, 280, 120]
-                ],
+                "attendance" => (function() {
+                    $labels = [];
+                    $data = [];
+                    for ($i = 6; $i >= 0; $i--) {
+                        $date = date('Y-m-d', strtotime("-$i days"));
+                        $labels[] = date('D', strtotime($date));
+                        $total = DB::table('institution_attendance_records')->where('date', $date)->whereNull('deleted_at')->count();
+                        $present = DB::table('institution_attendance_records')->where('date', $date)->where('status', 'present')->whereNull('deleted_at')->count();
+                        $data[] = $total > 0 ? round(($present / $total) * 100) : 0;
+                    }
+                    return ['labels' => $labels, 'data' => $data];
+                })(),
+                "enrollment" => (function() {
+                    $labels = [];
+                    $data = [];
+                    $departments = DB::table('institution_departments')
+                        ->whereNull('deleted_at')
+                        ->where('status', 1)
+                        ->select('id', 'name')
+                        ->get();
+                    
+                    foreach ($departments as $dept) {
+                        $count = DB::table('institution_faculties')
+                            ->where('department_id', $dept->id)
+                            ->whereNull('deleted_at')
+                            ->count();
+                        if ($count > 0) {
+                            $labels[] = $dept->name;
+                            $data[] = $count;
+                        }
+                    }
+                    
+                    if (empty($labels)) {
+                        $labels = ['Pending Data'];
+                        $data = [1];
+                    }
+                    
+                    return ['labels' => $labels, 'data' => $data];
+                })(),
                 "event_stats" => [
-                    "labels" => ['Completed', 'Upcoming', 'Draft'],
+                    "labels" => ['Completed', 'Upcoming'],
                     "data" => [
                         DB::table('institution_events')->where('status', 0)->count(),
-                        DB::table('institution_events')->where('status', 1)->count(),
-                        2 // static for demo
+                        DB::table('institution_events')->where('status', 1)->count()
                     ]
                 ]
             ],
@@ -183,6 +213,29 @@ class HomeController extends Controller
         ];
         return view("dashboard", $data);
     }
+
+    function attendanceDashboard(Request $req)
+    {
+        $recentSessions = DB::table('institution_attendance_session')
+            ->leftJoin('institution_faculties', 'institution_attendance_session.faculty_id', '=', 'institution_faculties.id')
+            ->leftJoin('institution_courses', 'institution_attendance_session.schedule_id', '=', 'institution_courses.id') // Adjust this join based on schedule relation
+            ->select('institution_attendance_session.*', 'institution_faculties.name as faculty_name')
+            ->orderBy('institution_attendance_session.created_at', 'desc')
+            ->take(10)
+            ->get();
+
+        $data = [
+            "title" => "Attendance System",
+            "recent_sessions" => $recentSessions,
+            "today_attendance" => DB::table('institution_attendance_records')->where('date', date('Y-m-d'))->where('status', 'present')->count(),
+            "today_absent" => DB::table('institution_attendance_records')->where('date', date('Y-m-d'))->where('status', 'absent')->count(),
+            "total_sessions_today" => DB::table('institution_attendance_session')->where('date', date('Y-m-d'))->count(),
+            "allowed_permissions" => unserialize(AdminGroup::find(Crypt::decrypt(Session::get("group_id")))->permissions),
+        ];
+
+        return view("attendance.dashboard", $data);
+    }
+
     function addPerms($perm_name = null, $icon = null, $sort_order = 0, $perm_parent = 0, $perm_type = "child")
     {
         if ($perm_name !== null) {

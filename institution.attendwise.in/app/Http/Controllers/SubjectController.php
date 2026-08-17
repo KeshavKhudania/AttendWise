@@ -259,4 +259,84 @@ class SubjectController extends Controller
             "icon" => "check-circle",
         ])->getContent();
     }
+
+    public function import(Request $request)
+    {
+        $request->validate([
+            'excel_file' => 'required|file|mimes:csv,txt,xlsx,xls',
+        ]);
+
+        $path = $request->file('excel_file')->store('imports/subjects');
+
+        \App\Jobs\ImportSubjectsJob::dispatch($path, get_logged_in_user()->institution_id);
+
+        return response()->json([
+            "msg" => "Subject import job has been queued. You will be notified once it's completed.",
+            "color" => "success",
+            "icon" => "check-circle"
+        ]);
+    }
+
+    public function downloadSample()
+    {
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="subjects_import_sample.csv"',
+        ];
+
+        $callback = function() {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, [
+                'name (Required)', 'code (Required)', 'department', 'course', 'semester', 'additional_department', 'type', 'classroom_type', 'credits', 'weekly_lectures', 'max_lectures_per_day', 'min_lectures_per_day', 'continuous_lectures', 'is_elective', 'syllabus_url', 'passing_marks', 'total_marks'
+            ]);
+            
+            fputcsv($file, [
+                'Data Structures', 'CS201', 'Computer Science', 'B.Tech Computer Science', '3', '', 'Theory', 'Lecture Hall', '4', '4', '2', '1', '2', '0', '', '40', '100'
+            ]);
+            
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    public function importMappings(Request $request)
+    {
+        $request->validate([
+            'excel_file' => 'required|file|mimes:csv,txt,xlsx,xls',
+        ]);
+
+        $path = $request->file('excel_file')->store('imports/subject_mappings');
+
+        \App\Jobs\ImportSubjectMappingsJob::dispatch($path, get_logged_in_user()->institution_id);
+
+        return response()->json([
+            "msg" => "Subject mappings import job has been queued. You will be notified once it's completed.",
+            "color" => "success",
+            "icon" => "check-circle"
+        ]);
+    }
+
+    public function downloadMappingsSample()
+    {
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="subject_mappings_import_sample.csv"',
+        ];
+
+        $callback = function() {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, [
+                'course (Required)', 'department', 'semester (Required)', 'subject_codes (Required)'
+            ]);
+            
+            fputcsv($file, [
+                'B.Tech Computer Science', 'Computer Science', '1', 'CS201, CS202'
+            ]);
+            
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
 }

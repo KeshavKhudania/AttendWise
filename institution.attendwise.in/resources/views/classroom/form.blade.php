@@ -1,95 +1,149 @@
 <x-structure />
 <x-header heading="{{ $title }}" />
 
+<div class="aw-page-header mb-4">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div>
+            <h1 class="page-heading mb-1">{{ $title }}</h1>
+            <p class="text-muted small mb-0">Configure physical classroom details, seating capacity, block affiliation, and geospatial coordinates.</p>
+        </div>
+        <div>
+            <a href="{{ route('institution.classroom.manage') }}" class="btn btn-light border">
+                <i class="fa fa-arrow-left me-1.5 opacity-75"></i> Back to Classrooms
+            </a>
+        </div>
+    </div>
+</div>
+
 <div class="col-lg-12 grid-margin stretch-card">
-  <div class="card">
-    <div class="card-body">
+    <div class="card aw-form-card shadow-sm border-0">
+        <div class="card-body">
 
-      <form action="{{ $action }}" method="POST" id="mainForm">
-        @csrf
-        @if($type === 'edit')
-        @method('PUT')
-        @endif
+            <form action="{{ $action }}" method="POST" id="mainForm">
+                @csrf
+                @if(isset($type) && ($type === 'edit' || $type === 'EDIT'))
+                    @method('PUT')
+                @endif
 
-        <div class="row g-3">
+                <div class="row g-4">
+                    {{-- Basic Specification Section --}}
+                    <div class="col-md-12">
+                        <div class="aw-form-section-header">
+                            <div class="aw-form-section-icon">
+                                <i class="fas fa-door-open"></i>
+                            </div>
+                            <div>
+                                <h3 class="aw-form-section-title">Classroom Specification & Location</h3>
+                                <p class="aw-form-section-subtitle">Room title, type, capacity, and associated building block</p>
+                            </div>
+                        </div>
+                    </div>
 
-          {{-- Classroom Name --}}
-          <div class="col-md-4">
-            <label class="form-label">Classroom Name <span class="text-danger">*</span></label>
-            <input type="text" name="name" class="form-control msc-form-control" required placeholder="e.g. Room 101"
-              value="{{ old('name', $classroom->name ?? '') }}">
-          </div>
+                    {{-- Classroom Name --}}
+                    <div class="col-md-4">
+                        <div class="aw-field-group">
+                            <label class="form-label aw-field-label">Classroom Name <span class="aw-field-required">*</span></label>
+                            <input type="text" name="name" class="form-control msc-form-control" required placeholder="e.g. Room 101"
+                                value="{{ old('name', $classroom->name ?? '') }}">
+                        </div>
+                    </div>
 
-          {{-- Code --}}
-          <div class="col-md-4">
-            <label class="form-label">Classroom Code</label>
-            <select name="type" class="form-control form-select msc-searchable" required>
-              <option value=""></option>
-              @foreach ($classroom_types as $classroom_type)
-              <option value="{{ $classroom_type->id }}" {{ old('type', $classroom->type ?? '') == $classroom_type->id ?
-                'selected' : '' }}>{{ $classroom_type->name }}</option>
-              @endforeach
-            </select>
-          </div>
+                    {{-- Classroom Type --}}
+                    <div class="col-md-4">
+                        <div class="aw-field-group">
+                            <label class="form-label aw-field-label">Classroom Type <span class="aw-field-required">*</span></label>
+                            <select name="type" class="form-control form-select msc-searchable" required>
+                                <option value="">Select Type</option>
+                                @foreach ($classroom_types as $classroom_type)
+                                    <option value="{{ $classroom_type->id }}" {{ old('type', $classroom->type ?? '') == $classroom_type->id ? 'selected' : '' }}>
+                                        {{ $classroom_type->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
 
-          {{-- Capacity --}}
-          <div class="col-md-4">
-            <label class="form-label">Capacity</label>
-            <input type="number" name="capacity" class="form-control msc-form-control" min="1" placeholder="e.g. 60"
-              value="{{ old('capacity', $classroom->capacity ?? '') }}">
-          </div>
+                    {{-- Capacity --}}
+                    <div class="col-md-4">
+                        <div class="aw-field-group">
+                            <label class="form-label aw-field-label">Seating Capacity</label>
+                            <input type="number" name="capacity" class="form-control msc-form-control" min="1" placeholder="e.g. 60"
+                                value="{{ old('capacity', $classroom->capacity ?? '') }}">
+                        </div>
+                    </div>
 
-          {{-- Block --}}
-          <div class="col-md-6">
-            <label class="form-label">Block <span class="text-danger">*</span></label>
-            <select name="block_id" class="form-control form-select msc-searchable" required>
-              <option value=""></option>
-              @foreach ($blocks as $block)
-              <option value="{{ $block->id }}" {{ old('block_id', $classroom->block_id ?? '') == $block->id ? 'selected'
-                : '' }}>{{ $block->name }}</option>
-              @endforeach
-            </select>
-          </div>
+                    {{-- Block --}}
+                    <div class="col-md-6">
+                        <div class="aw-field-group">
+                            <label class="form-label aw-field-label">Building Block <span class="aw-field-required">*</span></label>
+                            <select name="block_id" class="form-control form-select msc-searchable" required>
+                                <option value="">Select Block</option>
+                                @foreach ($blocks as $block)
+                                    <option value="{{ $block->id }}" {{ old('block_id', $classroom->block_id ?? '') == $block->id ? 'selected' : '' }}>
+                                        {{ $block->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
 
-          {{-- Department --}}
-          <div class="col-md-6">
-            <label class="form-label">Department</label>
-            <select name="department_id" class="form-control form-select msc-searchable">
-              <option value=""></option>
-              @foreach ($departments as $dept)
-              <option value="{{ $dept->id }}" {{ old('department_id', $classroom->department_id ?? '') == $dept->id ?
-                'selected' : '' }}>{{ $dept->name }}</option>
-              @endforeach
-            </select>
-          </div>
+                    {{-- Department --}}
+                    <div class="col-md-6">
+                        <div class="aw-field-group">
+                            <label class="form-label aw-field-label">Allocated Department</label>
+                            <select name="department_id" class="form-control form-select msc-searchable">
+                                <option value="">Select Department (Optional)</option>
+                                @foreach ($departments as $dept)
+                                    <option value="{{ $dept->id }}" {{ old('department_id', $classroom->department_id ?? '') == $dept->id ? 'selected' : '' }}>
+                                        {{ $dept->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
 
-          {{-- LAtLng --}}
-          <div class="col-md-12">
-            <label class="mb-2">Block Area (Lat / Lng)</label>
+                    {{-- Geo-Location Section --}}
+                    <div class="col-md-12 mt-4">
+                        <div class="aw-form-section-header">
+                            <div class="aw-form-section-icon">
+                                <i class="fas fa-map-marked-alt"></i>
+                            </div>
+                            <div>
+                                <h3 class="aw-form-section-title">Geofence Coordinates (Lat / Lng)</h3>
+                                <p class="aw-form-section-subtitle">Interactively click the map or use GPS to define classroom physical boundaries</p>
+                            </div>
+                        </div>
+                    </div>
 
-            <div id="map" style="height:500px;border-radius:8px;"></div>
+                    {{-- Map Container --}}
+                    <div class="col-md-12">
+                        <div class="border rounded p-2 bg-light">
+                            <div id="map" style="height:420px; border-radius:8px;" class="shadow-sm"></div>
 
-            <div id="latlngRows" class="mt-3"></div>
+                            <div id="latlngRows" class="mt-3"></div>
 
-            <button type="button" class="btn btn-sm btn-outline-primary mt-2" onclick="addRowFromGPS()">
-              + Add Point
-            </button>
+                            <button type="button" class="btn btn-sm btn-outline-primary mt-2" onclick="addRowFromGPS()">
+                                <i class="fas fa-crosshairs me-1"></i> Add Point via GPS / Manual
+                            </button>
 
-            {{-- Hidden JSON field --}}
-            <input type="hidden" name="latlng" id="latlng"
-              value="{{ old('latlng', is_array($classroom['latlng'] ?? null) ? json_encode($classroom['latlng']) : ($classroom['latlng'] ?? '')) }}">
-          </div>
-          {{-- Buttons --}}
-          <div class="col-md-12 mt-3">
-            <x-form-buttons />
-          </div>
+                            {{-- Hidden JSON field --}}
+                            <input type="hidden" name="latlng" id="latlng"
+                                value="{{ old('latlng', is_array($classroom['latlng'] ?? null) ? json_encode($classroom['latlng']) : ($classroom['latlng'] ?? '')) }}">
+                        </div>
+                    </div>
+
+                    {{-- Buttons --}}
+                    <div class="col-md-12">
+                        <x-form-buttons />
+                    </div>
+
+                </div>
+            </form>
 
         </div>
-      </form>
-
     </div>
-  </div>
 </div>
+
 <script>
   document.addEventListener('DOMContentLoaded', function () {
 

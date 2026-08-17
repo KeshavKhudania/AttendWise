@@ -25,4 +25,9 @@ class Schedule extends Model
     {
         return $this->belongsTo(Classroom::class, 'classroom_id');
     }
+
+    public function section()
+    {
+        return $this->belongsTo(Section::class, 'section_id');
+    }
 }

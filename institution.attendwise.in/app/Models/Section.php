@@ -12,6 +12,9 @@ class Section extends Model
     use SoftDeletes;
     protected $table = 'institution_sections';
     protected $guarded = ["id"];
+    protected $casts = [
+        'working_days' => 'array',
+    ];
     function course()
     {
         return $this->belongsTo(Course::class , "course_id", "id");

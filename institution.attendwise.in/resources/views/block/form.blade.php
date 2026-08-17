@@ -1,45 +1,86 @@
 <x-structure />
 <x-header heading="{{ $title }}" />
 
+<div class="aw-page-header mb-4">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div>
+            <h1 class="page-heading mb-1">{{ $title }}</h1>
+            <p class="text-muted small mb-0">Define building block identifiers and map physical perimeter coordinates for geofencing.</p>
+        </div>
+        <div>
+            <a href="{{ route('institution.block.manage') }}" class="btn btn-light border">
+                <i class="fa fa-arrow-left me-1.5 opacity-75"></i> Back to Blocks
+            </a>
+        </div>
+    </div>
+</div>
+
 <div class="col-lg-12 grid-margin stretch-card">
-    <div class="card">
+    <div class="card aw-form-card shadow-sm border-0">
         <div class="card-body">
 
             <form action="{{ $action }}" method="POST" id="mainForm" data-form-type="{{ $type }}">
                 @csrf
-                @if($type === 'edit')
-                @method('PUT')
+                @if(isset($type) && ($type === 'edit' || $type === 'EDIT'))
+                    @method('PUT')
                 @endif
 
-                <div class="row">
+                <div class="row g-4">
+
+                    {{-- Block Identification Section --}}
+                    <div class="col-md-12">
+                        <div class="aw-form-section-header">
+                            <div class="aw-form-section-icon">
+                                <i class="fas fa-building"></i>
+                            </div>
+                            <div>
+                                <h3 class="aw-form-section-title">Building Block Identification</h3>
+                                <p class="aw-form-section-subtitle">Specify unique block name or structural identifier</p>
+                            </div>
+                        </div>
+                    </div>
 
                     {{-- Block Name --}}
                     <div class="col-md-12">
-                        <div class="form-group mb-3">
-                            <label for="name">Block Name</label>
+                        <div class="aw-field-group">
+                            <label for="name" class="form-label aw-field-label">Block Name <span class="aw-field-required">*</span></label>
                             <input type="text" name="name" id="name" class="form-control" required
-                                placeholder="Enter block name" value="{{ old('name', $block->name ?? '') }}">
+                                placeholder="e.g. Science & Technology Block - North Wing" value="{{ old('name', $block->name ?? '') }}">
                         </div>
                     </div>
-                    {{-- Geofence Area --}}
+
+                    {{-- Geofence Area Section --}}
+                    <div class="col-md-12 mt-4">
+                        <div class="aw-form-section-header">
+                            <div class="aw-form-section-icon">
+                                <i class="fas fa-draw-polygon"></i>
+                            </div>
+                            <div>
+                                <h3 class="aw-form-section-title">Geofence Area (Lat / Lng)</h3>
+                                <p class="aw-form-section-subtitle">Interactively click the map or click GPS to mark block perimeter vertices</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Map Container --}}
                     <div class="col-md-12">
-                        <label class="mb-2">Block Area (Lat / Lng)</label>
+                        <div class="border rounded p-2 bg-light">
+                            <div id="map" style="height:450px; border-radius:8px;" class="shadow-sm"></div>
 
-                        <div id="map" style="height:500px;border-radius:8px;"></div>
+                            <div id="latlngRows" class="mt-3"></div>
 
-                        <div id="latlngRows" class="mt-3"></div>
+                            <button type="button" class="btn btn-sm btn-outline-primary mt-2" onclick="addRowFromGPS()">
+                                <i class="fas fa-location-arrow me-1"></i> Add Point via GPS / Manual
+                            </button>
 
-                        <button type="button" class="btn btn-sm btn-outline-primary mt-2" onclick="addRowFromGPS()">
-                            + Add Point
-                        </button>
-
-                        {{-- Hidden JSON field --}}
-                        <input type="hidden" name="latlng" id="latlng"
-                            value="{{ old('latlng', is_array($block['latlng'] ?? null) ? json_encode($block['latlng']) : ($block['latlng'] ?? '')) }}">
+                            {{-- Hidden JSON field --}}
+                            <input type="hidden" name="latlng" id="latlng"
+                                value="{{ old('latlng', is_array($block['latlng'] ?? null) ? json_encode($block['latlng']) : ($block['latlng'] ?? '')) }}">
+                        </div>
                     </div>
 
                     {{-- Buttons --}}
-                    <div class="col-md-12 mt-3">
+                    <div class="col-md-12">
                         <x-form-buttons />
                     </div>
 
@@ -49,6 +90,7 @@
         </div>
     </div>
 </div>
+
 <script>
     document.addEventListener('DOMContentLoaded', function () {
 

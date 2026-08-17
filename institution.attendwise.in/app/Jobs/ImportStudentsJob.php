@@ -66,19 +66,31 @@ class ImportStudentsJob implements ShouldQueue
             $sectionsIndex = [];
 
             /* -----------------------------------------
-             | Open CSV
+             | Open Excel/CSV
              |-----------------------------------------*/
-            $file = fopen(storage_path('app/' . $this->filePath), 'r');
-            if (!$file) {
-                throw new \Exception('Unable to open CSV file.');
+            $fullPath = storage_path('app/' . $this->filePath);
+            if (!file_exists($fullPath)) {
+                throw new \Exception('File does not exist.');
+            }
+            
+            $dataRows = \Maatwebsite\Excel\Facades\Excel::toArray(new class {}, $fullPath)[0];
+            
+            if (count($dataRows) === 0) {
+                throw new \Exception('File is empty.');
+            }
+            
+            $header = array_shift($dataRows);
+            if ($header) {
+                foreach ($header as &$h) {
+                    if (is_string($h)) {
+                        $h = str_replace("\xEF\xBB\xBF", '', $h);
+                        $h = trim(preg_replace('/\(required\)/i', '', $h));
+                        $h = trim(str_replace('*', '', $h));
+                    }
+                }
             }
 
-            $header = fgetcsv($file);
-            if ($header && str_starts_with($header[0], "\xEF\xBB\xBF")) {
-                $header[0] = str_replace("\xEF\xBB\xBF", '', $header[0]);
-            }
-
-            while (($row = fgetcsv($file)) !== false) {
+            foreach ($dataRows as $row) {
                 if (count($header) !== count($row)) continue;
                 $data = array_combine($header, $row);
 
@@ -200,11 +212,20 @@ class ImportStudentsJob implements ShouldQueue
                     ->first();
 
                 $payload = [];
-
-                foreach (['name', 'email', 'mobile', 'gender'] as $field) {
-                    if (!empty($data[$field])) {
-                        $payload[$field] = $data[$field];
+                $extraFields = [
+                    'name', 'email', 'mobile', 'gender', 'first_name', 'last_name', 'batch', 'specialization', 'address', 'guardian_details', 'admission_date', 'enrollment_number',
+                    'date_of_birth', 'blood_group', 'religion', 'caste_category', 'nationality', 'mother_tongue', 'national_id', 'permanent_address', 'emergency_contact_name', 'emergency_contact_number',
+                    'admission_type', 'previous_qualification', 'previous_school', 'previous_marks_percentage', 'is_hosteller', 'hostel_room_details', 'uses_transport', 'transport_route_details', 'bank_account_no', 'bank_name', 'bank_ifsc', 'medical_history'
+                ];
+                
+                foreach ($extraFields as $field) {
+                    if (isset($data[$field]) && trim($data[$field]) !== '') {
+                        $payload[$field] = trim($data[$field]);
                     }
+                }
+                
+                if (!empty($data['password'])) {
+                    $payload['password'] = \Illuminate\Support\Facades\Hash::make($data['password']);
                 }
 
                 $payload['department_id']  = $department->id;
@@ -227,7 +248,7 @@ class ImportStudentsJob implements ShouldQueue
                 }
             }
 
-            fclose($file);
+            // File is loaded in memory, no need to fclose.
 
             /* -----------------------------------------
              | Import Log

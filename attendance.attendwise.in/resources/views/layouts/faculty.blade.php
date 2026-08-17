@@ -19,7 +19,7 @@
             --card-bg: #ffffff;
             --primary: #000000;
             --primary-glow: rgba(0, 0, 0, 0.05);
-            --accent: #2563eb;
+            --accent: #333333;
             --hover-bg: #f3f4f6;
             --sidebar-active: #ffffff;
             --subtle-bg: #f9fafb;
@@ -34,7 +34,7 @@
             --card-bg: #000000;
             --primary: #ffffff;
             --primary-glow: rgba(255, 255, 255, 0.1);
-            --accent: #3b82f6;
+            --accent: #cccccc;
             --hover-bg: #111111;
             --sidebar-active: #111111;
             --subtle-bg: #0a0a0a;
@@ -131,7 +131,7 @@
             width: 100%;
             padding: 0.6rem;
             background: transparent;
-            color: #ef4444;
+            color: var(--text-main);
             border: 1px solid transparent;
             border-radius: 0.4rem;
             cursor: pointer;
@@ -144,8 +144,8 @@
         }
 
         .logout-btn:hover {
-            background: rgba(239, 68, 68, 0.05);
-            border-color: rgba(239, 68, 68, 0.1);
+            background: var(--hover-bg);
+            border-color: var(--border);
         }
 
         /* Top Bar */
@@ -405,14 +405,14 @@
 
             <div class="content-inner">
                 @if(session('success'))
-                <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid #10b981; color: #10b981; padding: 1rem; border-radius: 0.5rem; margin-bottom: 2rem; display: flex; align-items: center; gap: 0.75rem;">
+                <div style="background: var(--subtle-bg); border: 1px solid var(--border); color: var(--text-main); padding: 1rem; border-radius: 0.5rem; margin-bottom: 2rem; display: flex; align-items: center; gap: 0.75rem;">
                     <i data-lucide="check-circle" style="width: 18px;"></i>
                     {{ session('success') }}
                 </div>
                 @endif
 
                 @if(session('error'))
-                <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid #ef4444; color: #ef4444; padding: 1rem; border-radius: 0.5rem; margin-bottom: 2rem; display: flex; align-items: center; gap: 0.75rem;">
+                <div style="background: var(--subtle-bg); border: 1px solid var(--border); color: var(--text-main); padding: 1rem; border-radius: 0.5rem; margin-bottom: 2rem; display: flex; align-items: center; gap: 0.75rem;">
                     <i data-lucide="alert-circle" style="width: 18px;"></i>
                     {{ session('error') }}
                 </div>

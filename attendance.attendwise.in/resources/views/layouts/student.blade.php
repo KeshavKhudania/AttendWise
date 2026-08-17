@@ -27,17 +27,20 @@
 
     <style>
         :root {
-            --bg-dark: #f8fafc;
+            --bg: #ffffff;
+            --subtle-bg: #f5f5f5;
+            --border: #e0e0e0;
+            --bg-dark: #ffffff;
             --card-bg: #ffffff;
-            --card-border: rgba(226, 232, 240, 0.9);
-            --accent-primary: #4f46e5;
-            --accent-glow: rgba(79, 70, 229, 0.2);
-            --accent-gradient: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
-            --success-gradient: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            --danger-gradient: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-            --warning-gradient: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-            --text-main: #0f172a;
-            --text-muted: #64748b;
+            --card-border: #e0e0e0;
+            --accent-primary: #000000;
+            --accent-glow: rgba(0, 0, 0, 0.1);
+            --accent-gradient: #000000;
+            --success-gradient: #333333;
+            --danger-gradient: #666666;
+            --warning-gradient: #999999;
+            --text-main: #000000;
+            --text-muted: #666666;
             --nav-height: 72px;
         }
 
@@ -58,8 +61,8 @@
             flex-direction: column;
             overflow-x: hidden;
             background-image: 
-                radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.08) 0%, transparent 40%),
-                radial-gradient(circle at 90% 80%, rgba(14, 165, 233, 0.08) 0%, transparent 40%);
+                radial-gradient(circle at 10% 20%, rgba(0, 0, 0, 0.03) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(0, 0, 0, 0.04) 0%, transparent 40%);
             background-attachment: fixed;
             padding-bottom: calc(var(--nav-height) + 20px);
         }
@@ -103,16 +106,16 @@
             font-weight: 800;
             font-size: 1.15rem;
             letter-spacing: -0.5px;
-            background: linear-gradient(135deg, #0f172a 0%, #334155 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            color: #000000;
+            background: none;
+            -webkit-text-fill-color: initial;
         }
 
         .offline-badge {
             display: none;
-            background: #fef2f2;
-            color: #ef4444;
-            border: 1px solid #fca5a5;
+            background: #f5f5f5;
+            color: #333333;
+            border: 1px solid #cccccc;
             padding: 4px 10px;
             border-radius: 20px;
             font-size: 0.75rem;
@@ -145,12 +148,11 @@
         /* PWA Install Banner */
         #pwaInstallBanner {
             display: none;
-            background: linear-gradient(135deg, rgba(238, 242, 255, 1) 0%, rgba(224, 242, 254, 1) 100%);
-            border: 1px solid rgba(99, 102, 241, 0.3);
+            background: #fafafa;
+            border: 1px solid #dddddd;
             border-radius: 16px;
             padding: 14px 16px;
             margin-bottom: 16px;
-            display: flex;
             align-items: center;
             justify-content: space-between;
             gap: 12px;
@@ -213,12 +215,12 @@
         }
 
         .nav-item.active {
-            color: #4f46e5;
+            color: #000000;
         }
 
         .nav-item.active i {
             transform: translateY(-2px);
-            color: #4f46e5;
+            color: #000000;
         }
 
         /* Floating Scanner Nav Action Button */
@@ -234,7 +236,7 @@
             font-size: 1.5rem;
             box-shadow: 0 8px 24px var(--accent-glow);
             margin-top: -30px;
-            border: 4px solid #f8fafc;
+            border: 4px solid #ffffff;
             text-decoration: none;
             transition: transform 0.2s ease;
             animation: pulse-glow 2s infinite;
@@ -245,9 +247,9 @@
         }
 
         @keyframes pulse-glow {
-            0% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.6); }
-            70% { box-shadow: 0 0 0 14px rgba(99, 102, 241, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
+            0% { box-shadow: 0 0 0 0 rgba(0, 0, 0, 0.2); }
+            70% { box-shadow: 0 0 0 14px rgba(0, 0, 0, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(0, 0, 0, 0); }
         }
 
         /* Buttons & Controls */
@@ -309,8 +311,8 @@
             transform: translateY(0);
         }
 
-        .toast-success { border-left: 4px solid #10b981; }
-        .toast-error { border-left: 4px solid #ef4444; }
+        .toast-success { border-left: 4px solid #333333; }
+        .toast-error { border-left: 4px solid #000000; }
     </style>
     @yield('styles')
     @vite(['resources/js/app.js'])
@@ -346,7 +348,7 @@
                     <img src="{{ asset('assets/images/logo.png') }}" alt="AttendWise Logo" style="max-width: 100%; max-height: 100%; object-fit: contain;">
                 </div>
                 <div>
-                    <div style="font-weight: 700; font-size: 0.88rem; color: #fff;">Install AttendWise PWA</div>
+                    <div style="font-weight: 700; font-size: 0.88rem; color: var(--text-main);">Install AttendWise PWA</div>
                     <div style="font-size: 0.75rem; color: var(--text-muted);">Add to home screen for instant access</div>
                 </div>
             </div>

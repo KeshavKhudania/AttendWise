@@ -70,6 +70,10 @@ class SectionController extends Controller
                     if ($value == 'latlng' && $req->post($value) != null) {
                         $data[$value] = serialize($req->post($value));
                     }
+                    elseif ($value == 'working_days') {
+                        // Store array directly — model cast handles JSON encoding
+                        $data[$value] = $req->input('working_days', []) ?: null;
+                    }
                     else {
                         $data[$value] = $req->input($value);
                     }

@@ -12,7 +12,10 @@ class Subject extends Model
     use SoftDeletes;
     protected $table = 'institution_subjects';
     protected $casts = [
-        // "latlng"=>Encrypted::class,
+        'continuous_lectures'  => 'boolean',
+        'max_lectures_per_day' => 'integer',
+        'min_lectures_per_day' => 'integer',
+        'weekly_lectures'      => 'integer',
     ];
     protected $guarded = ["id"];
     function institution(){

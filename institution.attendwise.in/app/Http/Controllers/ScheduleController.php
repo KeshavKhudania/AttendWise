@@ -6,10 +6,142 @@ use App\Http\Controllers\Controller;
 use App\Models\Schedule;
 use App\Models\Section;
 use App\Models\Course;
+use App\Models\Subject;
+use App\Models\Faculty;
+use App\Models\Classroom;
+use App\Models\ClassGroup;
+use App\Models\Department;
+use App\Models\InstitutionAcademicSetting;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Schema;
+use App\Models\SemesterSubject;
 
 class ScheduleController extends Controller
 {
+    public function formView(Request $req)
+    {
+        $institutionId = get_logged_in_user()->institution_id;
+
+        if ($req->segment(3)) {
+            $details = Schedule::find(Crypt::decrypt($req->segment(3)));
+            if (!$details) {
+                return abort(404, "Page Not Found");
+            }
+            $fields = $details;
+            $data = [
+                "title" => "Edit Schedule Slot",
+                "type" => "EDIT",
+                "action" => route("institution.time.table.update", ["id" => $req->segment(3)]),
+                "schedule" => $fields,
+                "sections" => Section::where('institution_id', $institutionId)->get(),
+                "courses" => Course::where('institution_id', $institutionId)->get(),
+                "departments" => Department::where('institution_id', $institutionId)->get(),
+                "subjects" => Subject::where('institution_id', $institutionId)->get(),
+                "faculties" => Faculty::where('institution_id', $institutionId)->get(),
+                "classrooms" => Classroom::where('institution_id', $institutionId)->get(),
+                "classGroups" => ClassGroup::where('institution_id', $institutionId)->get(),
+            ];
+        }
+        else {
+            $fields = [];
+
+            foreach (Schema::getColumnListing("institution_schedules") as $value) {
+                $fields[$value] = null;
+            }
+            $data = [
+                "title" => "Add Schedule Slot",
+                "type" => "ADD",
+                "action" => route("institution.time.table.create"),
+                "schedule" => (object)$fields,
+                "sections" => Section::where('institution_id', $institutionId)->get(),
+                "courses" => Course::where('institution_id', $institutionId)->get(),
+                "departments" => Department::where('institution_id', $institutionId)->get(),
+                "subjects" => Subject::where('institution_id', $institutionId)->get(),
+                "faculties" => Faculty::where('institution_id', $institutionId)->get(),
+                "classrooms" => Classroom::where('institution_id', $institutionId)->get(),
+                "classGroups" => ClassGroup::where('institution_id', $institutionId)->get(),
+            ];
+        }
+        return view("schedule.form", $data);
+    }
+
+    public function form(Request $req)
+    {
+        $institutionId = get_logged_in_user()->institution_id;
+
+        if ($req->segment(3)) {
+            $id = Crypt::decrypt($req->segment(3));
+            $schedule = Schedule::findOrFail($id);
+
+            $data = [];
+            foreach (Schema::getColumnListing('institution_schedules') as $value) {
+                if (in_array($value, ['id', 'created_at', 'updated_at', 'deleted_at'])) {
+                    continue;
+                }
+                if ($req->has($value)) {
+                    $data[$value] = $req->input($value);
+                }
+            }
+            $data['institution_id'] = $institutionId;
+
+            if (!empty($data['section_id'])) {
+                $section = Section::find($data['section_id']);
+                if ($section) {
+                    $data['department_id'] = $section->department_id;
+                    $data['course_id'] = $section->course_id;
+                    $data['academic_year'] = $section->academic_year;
+                    $data['semester'] = $section->semester;
+                }
+            }
+
+            if ($schedule->update($data)) {
+                return json_encode(["msg" => "Schedule Slot Updated.", "color" => "success", "icon" => "check-circle"]);
+            }
+            return abort(403, json_encode(["msg" => "Something went wrong.", "color" => "danger", "icon" => "exclamation-circle"]));
+        }
+        else {
+            $data = [];
+            foreach (Schema::getColumnListing('institution_schedules') as $value) {
+                if (in_array($value, ['id', 'created_at', 'updated_at', 'deleted_at'])) {
+                    continue;
+                }
+                if ($req->has($value)) {
+                    $data[$value] = $req->input($value);
+                }
+            }
+            $data['institution_id'] = $institutionId;
+
+            if (!empty($data['section_id'])) {
+                $section = Section::find($data['section_id']);
+                if ($section) {
+                    $data['department_id'] = $section->department_id;
+                    $data['course_id'] = $section->course_id;
+                    $data['academic_year'] = $section->academic_year;
+                    $data['semester'] = $section->semester;
+                }
+            }
+
+            $schedule = Schedule::create($data);
+            if ($schedule) {
+                return json_encode(["msg" => "Schedule Slot Created.", "color" => "success", "icon" => "check-circle"]);
+            }
+            return abort(403, json_encode(["msg" => "Something went wrong.", "color" => "danger", "icon" => "exclamation-circle"]));
+        }
+    }
+
+    public function delete(Request $req)
+    {
+        try {
+            if ($id = Crypt::decrypt($req->segment(3))) {
+                Schedule::findOrFail($id)->delete();
+                return json_encode(["msg" => "Schedule Slot Deleted.", "color" => "success", "icon" => "check-circle"]);
+            }
+        }
+        catch (\Throwable $th) {
+            return abort(401);
+        }
+    }
     public function index(Request $request)
     {
         $institutionId = get_logged_in_user()->institution_id;
@@ -39,7 +171,11 @@ class ScheduleController extends Controller
         $sections = $query->orderBy('academic_year', 'desc')
             ->orderBy('semester')
             ->orderBy('name')
-            ->get();
+            ->paginate(5); // Lazy loading with pagination
+
+        if ($request->ajax()) {
+            return view('schedule.partials.section_list', compact('sections'))->render();
+        }
 
         $courses = Course::where('institution_id', $institutionId)->get();
 
@@ -141,18 +277,74 @@ class ScheduleController extends Controller
     }
 
     /**
-     * AUTO GENERATE TIMETABLE
+     * SHOW AUTO-GENERATE CONFIGURATION VIEW
      */
-    public function autoGenerate(Request $request)
+    public function autoGenerateView(Request $request)
     {
         $institutionId = get_logged_in_user()->institution_id;
 
-        app(\App\Services\ScheduleAutoGenerate::class)
-            ->generateForInstitution($institutionId);
+        return view('schedule.auto_generate', [
+            'title'       => 'Auto-Generate Timetable',
+            'departments' => Department::where('institution_id', $institutionId)->get(),
+            'courses'     => Course::where('institution_id', $institutionId)->get(),
+            'sections'    => Section::where('institution_id', $institutionId)->where('status', 1)->get(),
+            'semesters'   => Section::where('institution_id', $institutionId)
+                                ->whereNotNull('semester')->distinct()->orderBy('semester')->pluck('semester'),
+            'allDays'     => ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+            'settings'    => InstitutionAcademicSetting::where('institution_id', $institutionId)->first(),
+        ]);
+    }
+
+    /**
+     * AUTO GENERATE TIMETABLE (scoped, with faculty-availability enforcement)
+     */
+    public function autoGenerate(Request $request)
+    {
+        $request->validate([
+            'scope_type'       => 'required|in:all,department,course,course_semester,section',
+            'scope_department' => 'nullable|integer',
+            'scope_course'     => 'nullable|integer',
+            'scope_semester'   => 'nullable|integer',
+            'scope_section'    => 'nullable|integer',
+            'working_days'     => 'nullable|array',
+            'working_days.*'   => 'in:Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday',
+            'clear_existing'   => 'nullable|boolean',
+            'utilize_limit'    => 'nullable|boolean',
+            'free_lectures'    => 'nullable|boolean',
+        ]);
+
+        $institutionId = get_logged_in_user()->institution_id;
+
+        $options = [
+            'scope_type'       => $request->input('scope_type', 'all'),
+            'scope_department' => $request->input('scope_department'),
+            'scope_course'     => $request->input('scope_course'),
+            'scope_semester'   => $request->input('scope_semester'),
+            'scope_section'    => $request->input('scope_section'),
+            'working_days'     => $request->input('working_days'),
+            'clear_existing'   => $request->boolean('clear_existing', true),
+            'utilize_limit'    => $request->boolean('utilize_limit', false),
+            'free_lectures'    => $request->boolean('free_lectures', false),
+        ];
+
+        $result = app(\App\Services\ScheduleAutoGenerate::class)
+            ->generateForInstitution($institutionId, $options);
+
+        $msg   = "Timetable generated: {$result['inserted']} slot(s) created.";
+        $color = 'success';
+
+        if (!empty($result['shortages'])) {
+            session(['timetable_shortages' => $result['shortages']]);
+            $msg  .= ' ⚠️ Faculty shortages detected — see notification below.';
+            $color = 'warning';
+        } else {
+            // Clear any old shortage session
+            session()->forget('timetable_shortages');
+        }
 
         return redirect()
-            ->back()
-            ->with(['msg' => 'Timetable generated successfully.', 'color' => 'success']);
+            ->route('institution.time.table.manage')
+            ->with(['msg' => $msg, 'color' => $color]);
     }
 
     /**
@@ -515,5 +707,69 @@ class ScheduleController extends Controller
         }
         $html .= '</table>';
         return $html;
+    }
+
+    public function resourceInfo(Request $request)
+    {
+        $institutionId = get_logged_in_user()->institution_id;
+        $selectedIds = $request->input('selected_ids', []);
+
+        if (empty($selectedIds)) {
+            return redirect()->back()->with(['msg' => 'No sections selected.', 'color' => 'warning']);
+        }
+
+        $sections = Section::where('institution_id', $institutionId)
+            ->whereIn('id', $selectedIds)
+            ->get();
+
+        $resources = [];
+        
+        foreach ($sections as $section) {
+            $semesterGroup = SemesterSubject::where('institution_id', $institutionId)
+                ->where('course_id', $section->course_id)
+                ->where('semester', $section->semester)
+                ->first();
+
+            if (!$semesterGroup || empty($semesterGroup->subjects)) {
+                continue;
+            }
+
+            $subjects = Subject::whereIn('id', (array)$semesterGroup->subjects)
+                ->where('status', 1)
+                ->get();
+
+            foreach ($subjects as $subject) {
+                $faculty = $subject->faculties()
+                    ->where('institution_faculty_subject.institution_id', $institutionId)
+                    ->first();
+
+                $workingDaysText = 'Mon-Fri (Default)';
+                $workingDaysCount = 5;
+                if ($faculty && !empty($faculty->working_days)) {
+                    $workingDaysText = implode(', ', $faculty->working_days);
+                    $workingDaysCount = count($faculty->working_days);
+                }
+
+                $dailyLimit = $subject->max_lectures_per_day ?? 8;
+                $maxWeeklyCapacity = $workingDaysCount * $dailyLimit;
+                $requiredLectures = $subject->weekly_lectures ?? 3;
+                
+                $isInsufficient = (!$faculty) || ($requiredLectures > $maxWeeklyCapacity);
+
+                $resources[] = [
+                    'section' => $section->name,
+                    'semester' => $section->course->name . ' - Sem ' . $section->semester,
+                    'subject' => $subject->name,
+                    'lectures' => $requiredLectures,
+                    'faculty' => $faculty ? $faculty->name : 'Unassigned',
+                    'working_days' => $workingDaysText,
+                    'daily_limit' => $subject->max_lectures_per_day ?? 'Default',
+                    'max_capacity' => $maxWeeklyCapacity,
+                    'is_insufficient' => $isInsufficient,
+                ];
+            }
+        }
+
+        return view('schedule.resource_info', compact('resources'));
     }
 }

@@ -53,7 +53,7 @@
           <!-- UPLOAD + YEAR -->
           <div class="row g-4 mb-4 align-items-center">
             <div class="col-md-12">
-                <input type="file" id="csv_file" name="csv_file" class="msc-file-upload" required>
+                <input type="file" id="excel_file" name="excel_file" class="msc-file-upload" required accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel">
             </div>
 
           </div>
@@ -126,12 +126,14 @@
 
           </div>
 
-          <!-- CSV INFO -->
           <div class="mt-4 p-3 rounded-3 bg-light border">
             <small class="text-muted">
-              <strong>CSV Columns:</strong><br>
-              roll_number, name, email, mobile, gender,
-              academic_year, semester, department, course, section, class_group
+              <strong>Excel Columns:</strong><br>
+              roll_number (Required), name (Required), email, mobile, gender,<br>
+              academic_year (Required), semester, department (Required), course (Required), section, class_group,<br>
+              first_name, last_name, batch, specialization, address, guardian_details, admission_date, enrollment_number, password,<br>
+              date_of_birth, blood_group, religion, caste_category, nationality, mother_tongue, national_id, permanent_address, emergency_contact_name, emergency_contact_number,<br>
+              admission_type, previous_qualification, previous_school, previous_marks_percentage, is_hosteller, hostel_room_details, uses_transport, transport_route_details, bank_account_no, bank_name, bank_ifsc, medical_history
             </small>
           </div>
 
