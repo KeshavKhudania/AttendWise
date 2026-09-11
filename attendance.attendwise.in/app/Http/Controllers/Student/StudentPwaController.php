@@ -123,10 +123,36 @@ class StudentPwaController extends Controller
             return redirect()->route('student.login');
         }
 
-        $student->load(['institution']);
+        $student->load(['institution', 'clubMemberships' => function($q) {
+            $q->where('can_take_attendance', 1)->with('club');
+        }]);
 
         $today = Carbon::today()->format('Y-m-d');
         $dayOfWeek = Carbon::now()->format('l');
+
+        $allClubIds = \App\Models\ClubMember::where('member_id', $student->id)
+            ->where('member_type', 'student')
+            ->pluck('club_id');
+
+        $activeClubSessions = AttendanceSession::whereIn('club_id', $allClubIds)
+            ->where('date', $today)
+            ->where(function($q) {
+                $q->where('status', 'active')
+                  ->orWhere(function($sq) {
+                      $sq->where('status', 'scheduled')
+                         ->where('start_time', '<=', Carbon::now()->format('H:i:s'))
+                         ->where('end_time', '>=', Carbon::now()->format('H:i:s'));
+                  });
+            })
+            ->where('is_geofencing', 1)
+            ->with('club')
+            ->get()->map(function($session) use ($student, $today) {
+                $record = AttendanceRecord::where('student_id', $student->id)
+                    ->where('attendance_session_id', $session->id)
+                    ->first();
+                $session->already_marked = (bool)$record;
+                return $session;
+            });
 
         // Fetch Today's Schedules for student's section or class group
         $todaySchedules = Schedule::with(['subject', 'faculty', 'classroom.block'])
@@ -162,6 +188,7 @@ class StudentPwaController extends Controller
                 $schedule->is_session_active = (bool) $activeSession;
                 $schedule->active_session_uuid = $activeSession ? $activeSession->uuid : null;
                 $schedule->is_cancelled = (bool) $cancelledSession;
+                
                 return $schedule;
             });
 
@@ -255,9 +282,11 @@ class StudentPwaController extends Controller
             return response()->json(['success' => false, 'message' => 'Cannot mark attendance for a past or future date.'], 403);
         }
 
+        $isClubSession = !empty($session->club_id);
+
         // 3. Section Verification: Ensure student belongs to the respective section of this schedule
         $scheduleSectionId = $session->schedule->section_id ?? null;
-        if (!$isDemoAccount && $scheduleSectionId && (int)$student->section_id !== (int)$scheduleSectionId) {
+        if (!$isClubSession && !$isDemoAccount && $scheduleSectionId && (int)$student->section_id !== (int)$scheduleSectionId) {
             $sectionName = $session->schedule->section->name ?? 'another section';
             return response()->json([
                 'success' => false, 
@@ -267,7 +296,7 @@ class StudentPwaController extends Controller
 
         // --- Geolocation Security Verification ---
         $classroom = $session->schedule->classroom ?? null;
-        if (!$isDemoAccount && $session->is_geofencing && $classroom && $classroom->latitude && $classroom->longitude) {
+        if (!$isClubSession && !$isDemoAccount && $session->is_geofencing && $classroom && $classroom->latitude && $classroom->longitude) {
             $studentLat = $validated['latitude'] ?? null;
             $studentLng = $validated['longitude'] ?? null;
 
@@ -305,42 +334,53 @@ class StudentPwaController extends Controller
         }
 
         // Check if attendance already marked
-        $existingRecord = AttendanceRecord::where('student_id', $student->id)
-            ->where('schedule_id', $session->schedule_id)
-            ->where('date', $session->date)
-            ->first();
+        $existingRecordQuery = AttendanceRecord::where('student_id', $student->id)->where('date', $session->date);
+        if ($isClubSession) {
+            $existingRecordQuery->where('club_id', $session->club_id)->where('attendance_session_id', $session->id);
+        } else {
+            $existingRecordQuery->where('schedule_id', $session->schedule_id);
+        }
+        $existingRecord = $existingRecordQuery->first();
 
         if ($existingRecord && $existingRecord->status === 'present') {
             return response()->json([
                 'success' => true,
                 'already_marked' => true,
-                'message' => 'Your attendance is already marked Present for this class.',
-                'subject' => $session->schedule->subject->name ?? 'Class',
+                'message' => 'Your attendance is already marked Present.',
+                'subject' => $isClubSession ? ($session->club->name ?? 'Club Session') : ($session->schedule->subject->name ?? 'Class'),
                 'time' => Carbon::now()->format('h:i A'),
                 'session_uuid' => $session->uuid
             ]);
         }
 
-        AttendanceRecord::updateOrCreate(
-            [
-                'institution_id' => $session->institution_id,
-                'student_id'     => $student->id,
-                'schedule_id'    => $session->schedule_id,
-                'date'           => $session->date,
-            ],
-            [
-                'attendance_session_id' => $session->id,
-                'marked_by_faculty_id' => $session->faculty_id,
-                'status'                => 'present',
-                'remarks'               => 'Marked via PWA QR Scanner',
-            ]
-        );
+        $recordData = [
+            'attendance_session_id' => $session->id,
+            'status'                => 'present',
+            'remarks'               => 'Marked via PWA QR Scanner',
+        ];
+
+        $matchData = [
+            'institution_id' => $session->institution_id,
+            'student_id'     => $student->id,
+            'date'           => $session->date,
+        ];
+
+        if ($isClubSession) {
+            $matchData['club_id'] = $session->club_id;
+            $matchData['attendance_session_id'] = $session->id;
+            $recordData['marked_by_student_id'] = $session->started_by_student_id;
+        } else {
+            $matchData['schedule_id'] = $session->schedule_id;
+            $recordData['marked_by_faculty_id'] = $session->faculty_id;
+        }
+
+        AttendanceRecord::updateOrCreate($matchData, $recordData);
 
         return response()->json([
             'success' => true,
             'message' => 'Attendance Marked Successfully!',
-            'subject' => $session->schedule->subject->name ?? 'Subject',
-            'faculty' => $session->faculty->name ?? 'Faculty',
+            'subject' => $isClubSession ? ($session->club->name ?? 'Club Session') : ($session->schedule->subject->name ?? 'Subject'),
+            'faculty' => $isClubSession ? 'Club Leader' : ($session->faculty->name ?? 'Faculty'),
             'time'    => Carbon::now()->format('h:i A'),
             'session_uuid' => $session->uuid
         ]);
@@ -470,5 +510,357 @@ class StudentPwaController extends Controller
         $student->save();
 
         return response()->json(['success' => true, 'message' => 'Face registered successfully!']);
+    }
+
+    public function clubIndex()
+    {
+        $student = Auth::guard('student')->user();
+        $student->load(['clubMemberships' => function($q) {
+            $q->where('can_take_attendance', 1)->with('club');
+        }]);
+
+        if ($student->clubMemberships->isEmpty()) {
+            return redirect()->route('student.dashboard')->with('error', 'Unauthorized access.');
+        }
+
+        return view('student.club.index', compact('student'));
+    }
+
+    public function clubSession($club_id)
+    {
+        $student = Auth::guard('student')->user();
+        $membership = \App\Models\ClubMember::where('club_id', $club_id)
+            ->where('member_id', $student->id)
+            ->where('member_type', 'student')
+            ->where('can_take_attendance', 1)
+            ->with('club')
+            ->firstOrFail();
+
+        $club = $membership->club;
+
+        $existingSession = AttendanceSession::where('club_id', $club->id)
+            ->where('date', Carbon::today()->format('Y-m-d'))
+            ->where('status', 'active')
+            ->first();
+
+        $existingRecords = collect();
+        if ($existingSession) {
+            $existingRecords = AttendanceRecord::where('attendance_session_id', $existingSession->id)
+                ->get()
+                ->pluck('status', 'student_id');
+        }
+
+        $clubMembers = \App\Models\ClubMember::with('member')->where('club_id', $club->id)->get();
+
+        $dayOfWeek = Carbon::now()->format('l');
+        $periods = \App\Models\Schedule::where('institution_id', $student->institution_id)
+            ->where('day_of_week', $dayOfWeek)
+            ->select('start_time', 'end_time')
+            ->distinct()
+            ->orderBy('start_time')
+            ->get();
+
+        return view('student.club.qr', compact('student', 'club', 'existingSession', 'existingRecords', 'clubMembers', 'periods'));
+    }
+
+    public function clubQrInit(Request $request)
+    {
+        $student = Auth::guard('student')->user();
+        $clubId = $request->club_id;
+        
+        $membership = \App\Models\ClubMember::where('club_id', $clubId)
+            ->where('member_id', $student->id)
+            ->where('member_type', 'student')
+            ->where('can_take_attendance', 1)
+            ->firstOrFail();
+
+        $status = $request->status ?? 'active';
+
+        $session = AttendanceSession::updateOrCreate(
+            [
+                'institution_id' => $student->institution_id,
+                'club_id' => $clubId,
+                'date' => Carbon::today()->format('Y-m-d'),
+                'status' => $status
+            ],
+            [
+                'started_by_student_id' => $student->id,
+                'start_time' => $request->event_start ?? Carbon::now()->format('H:i:s'),
+                'end_time' => $request->event_end ?? Carbon::now()->addHours(1)->format('H:i:s'),
+                'is_geofencing' => $request->is_geofencing ?? 0,
+                'latitude' => $request->latitude,
+                'longitude' => $request->longitude,
+                'venue' => $request->venue,
+            ]
+        );
+
+        return response()->json([
+            'success' => true,
+            'uuid' => $session->uuid,
+            'session_id' => $session->id
+        ]);
+    }
+
+    public function clubQrRefresh(Request $request)
+    {
+        $student = Auth::guard('student')->user();
+        $sessionUuid = $request->uuid;
+        
+        $session = AttendanceSession::where('uuid', $sessionUuid)
+            ->where('started_by_student_id', $student->id)
+            ->firstOrFail();
+        
+        $timestamp = now()->timestamp;
+        $payload = $sessionUuid . '|' . $timestamp;
+        
+        $session->update(['qr_refresh_token' => $timestamp]);
+        
+        return response()->json([
+            'success' => true,
+            'payload' => $payload
+        ]);
+    }
+
+    public function getClubSessionStudents(Request $request)
+    {
+        $student = Auth::guard('student')->user();
+        $sessionUuid = $request->uuid;
+        $session = AttendanceSession::where('uuid', $sessionUuid)
+            ->where('started_by_student_id', $student->id)
+            ->firstOrFail();
+        
+        $records = AttendanceRecord::where('attendance_session_id', $session->id)
+            ->where('status', 'present')
+            ->with('student')
+            ->get();
+            
+        return response()->json([
+            'success' => true,
+            'present_student_ids' => $records->pluck('student_id')->toArray(),
+            'students' => $records->map(function($record) {
+                return [
+                    'id' => $record->student->id ?? '',
+                    'name' => $record->student->name ?? 'Unknown',
+                    'roll_number' => $record->student->roll_number ?? '',
+                ];
+            })->toArray()
+        ]);
+    }
+
+    public function clubQrClose(Request $request)
+    {
+        $student = Auth::guard('student')->user();
+        $sessionUuid = $request->uuid;
+        
+        $session = AttendanceSession::where('uuid', $sessionUuid)
+            ->where('started_by_student_id', $student->id)
+            ->firstOrFail();
+            
+        $session->update(['status' => 'completed', 'end_time' => Carbon::now()->format('H:i:s')]);
+        
+        try {
+            event(new \App\Events\LiveAttendanceAction($session->uuid, 'session_ended', []));
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::warning('WebSocket broadcast failed: ' . $e->getMessage());
+        }
+        
+        return response()->json(['success' => true]);
+    }
+
+    public function clubSubmitAttendance(Request $request)
+    {
+        $student = Auth::guard('student')->user();
+        $club_id = $request->club_id;
+        
+        $membership = \App\Models\ClubMember::where('club_id', $club_id)
+            ->where('member_id', $student->id)
+            ->where('member_type', 'student')
+            ->where('can_take_attendance', 1)
+            ->firstOrFail();
+
+        $request->validate([
+            'attendance' => 'required|array',
+            'attendance.*' => 'required|in:present,absent,late,excused',
+        ]);
+
+        $date = Carbon::today()->format('Y-m-d');
+
+        DB::beginTransaction();
+        try {
+            $session = AttendanceSession::updateOrCreate(
+                [
+                    'institution_id' => $student->institution_id,
+                    'club_id' => $club_id,
+                    'date' => $date,
+                ],
+                [
+                    'started_by_student_id' => $student->id,
+                    'start_time' => $request->event_start ?? Carbon::now()->format('H:i:s'),
+                    'end_time' => $request->event_end ?? Carbon::now()->addHours(1)->format('H:i:s'),
+                    'status' => 'completed',
+                ]
+            );
+
+            foreach ($request->attendance as $studentId => $status) {
+                AttendanceRecord::updateOrCreate(
+                    [
+                        'institution_id' => $student->institution_id,
+                        'student_id' => $studentId,
+                        'club_id' => $club_id,
+                        'date' => $date,
+                    ],
+                    [
+                        'attendance_session_id' => $session->id,
+                        'marked_by_student_id' => $student->id,
+                        'status' => $status,
+                        'remarks' => $request->remarks[$studentId] ?? null,
+                    ]
+                );
+
+                if ($status === 'present' || $status === 'excused') {
+                    $targetStudent = \App\Models\Student::find($studentId);
+                    if ($targetStudent) {
+                        $schedules = \App\Models\Schedule::where('institution_id', $targetStudent->institution_id)
+                            ->where('day_of_week', Carbon::parse($session->date)->format('l'))
+                            ->where(function($query) use ($targetStudent) {
+                                if ($targetStudent->section_id) {
+                                    $query->where('section_id', $targetStudent->section_id);
+                                }
+                                if ($targetStudent->class_group_id) {
+                                    $query->orWhere('class_group_id', $targetStudent->class_group_id);
+                                }
+                            })
+                            ->where('start_time', '<=', $session->end_time)
+                            ->where('end_time', '>=', $session->start_time)
+                            ->get();
+                            
+                        foreach ($schedules as $schedule) {
+                            AttendanceRecord::updateOrCreate(
+                                [
+                                    'institution_id' => $session->institution_id,
+                                    'student_id'     => $studentId,
+                                    'schedule_id'    => $schedule->id,
+                                    'date'           => $session->date,
+                                ],
+                                [
+                                    'status'                => 'present',
+                                    'remarks'               => 'Club Activity (Verified)',
+                                ]
+                            );
+                        }
+                    }
+                }
+            }
+            DB::commit();
+            return redirect()->route('student.club.index')->with('success', 'Attendance submitted successfully!');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Failed to save attendance: ' . $e->getMessage());
+        }
+    }
+
+    public function clubGeoMark(Request $request)
+    {
+        $student = Auth::guard('student')->user();
+        $session = AttendanceSession::with('club')->where('uuid', $request->uuid)->first();
+        
+        if (!$session) {
+            return response()->json(['success' => false, 'message' => 'Session not found.']);
+        }
+
+        if ($session->status === 'scheduled') {
+            $now = Carbon::now()->format('H:i:s');
+            if ($now < $session->start_time || $now > $session->end_time) {
+                return response()->json(['success' => false, 'message' => 'You can only mark attendance during the scheduled time slot.']);
+            }
+        } elseif ($session->status !== 'active') {
+            return response()->json(['success' => false, 'message' => 'Session is not active.']);
+        }
+
+        if (!$request->latitude || !$request->longitude) {
+            return response()->json(['success' => false, 'message' => 'GPS coordinates are required.']);
+        }
+
+        if ($session->latitude && $session->longitude) {
+            $earthRadius = 6371000; 
+            $latFrom = deg2rad($session->latitude);
+            $lonFrom = deg2rad($session->longitude);
+            $latTo = deg2rad($request->latitude);
+            $lonTo = deg2rad($request->longitude);
+
+            $latDelta = $latTo - $latFrom;
+            $lonDelta = $lonTo - $lonFrom;
+
+            $a = sin($latDelta / 2) * sin($latDelta / 2) +
+                 cos($latFrom) * cos($latTo) *
+                 sin($lonDelta / 2) * sin($lonDelta / 2);
+            $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+            $distance = $earthRadius * $c;
+
+            $allowedRadius = 150; 
+
+            if ($distance > $allowedRadius) {
+                return response()->json([
+                    'success' => false, 
+                    'message' => 'You are ' . round($distance) . ' meters away. You must be within ' . $allowedRadius . ' meters.'
+                ]);
+            }
+        }
+
+        DB::beginTransaction();
+        try {
+            // Mark for club
+            AttendanceRecord::updateOrCreate(
+                [
+                    'institution_id' => $session->institution_id,
+                    'student_id'     => $student->id,
+                    'club_id'        => $session->club_id,
+                    'date'           => $session->date,
+                    'attendance_session_id' => $session->id,
+                ],
+                [
+                    'status'                => 'present',
+                    'remarks'               => 'Marked via Club Geo-Location',
+                    'marked_by_student_id'  => $student->id,
+                ]
+            );
+
+            // Fetch schedules overlapping with club session window
+            // Overlap check: schedule starts before now AND ends after session started.
+            $schedules = Schedule::where('institution_id', $student->institution_id)
+                ->where('day_of_week', Carbon::parse($session->date)->format('l'))
+                ->where(function($query) use ($student) {
+                    if ($student->section_id) {
+                        $query->where('section_id', $student->section_id);
+                    }
+                    if ($student->class_group_id) {
+                        $query->orWhere('class_group_id', $student->class_group_id);
+                    }
+                })
+                ->where('start_time', '<=', $session->end_time)
+                ->where('end_time', '>=', $session->start_time)
+                ->get();
+                
+            foreach ($schedules as $schedule) {
+                AttendanceRecord::updateOrCreate(
+                    [
+                        'institution_id' => $session->institution_id,
+                        'student_id'     => $student->id,
+                        'schedule_id'    => $schedule->id,
+                        'date'           => $session->date,
+                    ],
+                    [
+                        'status'                => 'present',
+                        'remarks'               => 'Club Activity (Verified)',
+                    ]
+                );
+            }
+            DB::commit();
+
+            return response()->json(['success' => true, 'message' => 'Attendance marked successfully!']);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);
+        }
     }
 }

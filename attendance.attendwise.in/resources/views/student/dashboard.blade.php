@@ -103,6 +103,90 @@
     </div>
 </div>
 
+@if($student->clubMemberships->isNotEmpty())
+<!-- Club & Event Management Shortcut -->
+<div class="glass-card" style="margin-bottom: 16px; background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%); padding: 18px; border-radius: 16px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);">
+    <div>
+        <h4 style="font-weight: 800; font-size: 1.1rem; color: #ffffff; margin-bottom: 4px;">Club Management</h4>
+        <p style="color: #e0e7ff; font-size: 0.8rem; margin: 0;">You have authorized access to manage attendance for your clubs.</p>
+    </div>
+    <a href="{{ route('student.club.index') }}" style="background: #ffffff; color: #4f46e5; text-decoration: none; padding: 10px 16px; border-radius: 12px; font-weight: 700; font-size: 0.85rem; display: flex; align-items: center; gap: 6px; flex-shrink: 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <i class="fa-solid fa-users-gear"></i> Manage
+    </a>
+</div>
+@endif
+
+@if(isset($activeClubSessions) && $activeClubSessions->isNotEmpty())
+<!-- Active Club Sessions -->
+<div style="margin-bottom: 16px;">
+    @foreach($activeClubSessions as $session)
+    <div class="glass-card" style="margin-bottom: 12px; background: linear-gradient(135deg, #0ea5e9 0%, #3b82f6 100%); padding: 18px; border-radius: 16px; box-shadow: 0 4px 12px rgba(14, 165, 233, 0.2);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;">
+            <div>
+                <h4 style="font-weight: 800; font-size: 1.1rem; color: #ffffff; margin-bottom: 4px;">{{ $session->club->name ?? 'Club Activity' }}</h4>
+                <p style="color: #e0f2fe; font-size: 0.8rem; margin: 0; margin-bottom: 4px;">
+                    <i class="fa-solid fa-map-location-dot"></i> 
+                    {{ $session->status === 'scheduled' ? 'Scheduled Geo-Location Session' : 'Live Geo-Location Session' }}
+                </p>
+                @if($session->venue)
+                    <p style="color: #e0f2fe; font-size: 0.75rem; margin: 0;"><i class="fa-solid fa-building"></i> Venue: {{ $session->venue }}</p>
+                @endif
+            </div>
+            @if($session->already_marked)
+                <span style="background: rgba(255,255,255,0.2); color: #ffffff; padding: 8px 12px; border-radius: 12px; font-weight: 700; font-size: 0.8rem; border: 1px solid rgba(255,255,255,0.4);">
+                    <i class="fa-solid fa-check"></i> Marked Present
+                </span>
+            @else
+                <button type="button" onclick="markClubAttendance('{{ $session->uuid }}')" style="background: #ffffff; color: #0ea5e9; padding: 10px 16px; border-radius: 12px; font-weight: 700; font-size: 0.85rem; border: none; display: flex; align-items: center; gap: 6px; flex-shrink: 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: pointer;">
+                    <i class="fa-solid fa-location-arrow"></i> Mark Present
+                </button>
+            @endif
+        </div>
+    </div>
+    @endforeach
+</div>
+
+<script>
+function markClubAttendance(sessionUuid) {
+    if (!navigator.geolocation) {
+        alert("Geolocation is not supported by your browser.");
+        return;
+    }
+    
+    // Change UI state somehow (for a real app, maybe a spinner)
+    
+    navigator.geolocation.getCurrentPosition(function(position) {
+        fetch('{{ route("student.club.attendance.geo") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({ 
+                uuid: sessionUuid,
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message || 'Attendance marked successfully!');
+                window.location.reload();
+            } else {
+                alert(data.message || 'Error marking attendance.');
+            }
+        }).catch(err => {
+            console.error(err);
+            alert('Error marking attendance.');
+        });
+    }, function(error) {
+        alert("Error getting location. Please allow location permissions to mark club attendance.");
+    });
+}
+</script>
+@endif
+
 <!-- Today's Schedule Timeline -->
 <div style="margin-bottom: 16px;">
     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; padding: 0 4px;">

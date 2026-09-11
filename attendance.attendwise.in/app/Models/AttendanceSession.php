@@ -17,7 +17,13 @@ class AttendanceSession extends Model
         'end_time',
         'status',
         'qr_refresh_token',
-        'is_geofencing'
+        'is_geofencing',
+        'club_id',
+        'event_id',
+        'started_by_student_id',
+        'latitude',
+        'longitude',
+        'venue',
     ];
 
     protected static function boot()
@@ -33,4 +39,5 @@ class AttendanceSession extends Model
     public function schedule() { return $this->belongsTo(Schedule::class); }
     public function faculty() { return $this->belongsTo(Faculty::class, 'faculty_id'); }
     public function records() { return $this->hasMany(AttendanceRecord::class, 'attendance_session_id'); }
+    public function club() { return $this->belongsTo(Club::class, 'club_id'); }
 }

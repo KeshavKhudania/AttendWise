@@ -120,4 +120,9 @@ class Student extends Authenticatable
     {
         return $this->belongsTo(Section::class);
     }
+
+    public function clubMemberships()
+    {
+        return $this->hasMany(ClubMember::class, 'member_id')->where('member_type', 'student');
+    }
 }

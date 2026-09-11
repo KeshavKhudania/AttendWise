@@ -58,6 +58,16 @@ Route::prefix('student')->name('student.')->group(function () {
         // Face Registration
         Route::get('face-register', [StudentPwaController::class, 'faceRegisterView'])->name('face_register');
         Route::post('face-register', [StudentPwaController::class, 'storeFaceDescriptor'])->name('face_register.store');
+
+        // Club & Event Attendance Management
+        Route::get('club', [StudentPwaController::class, 'clubIndex'])->name('club.index');
+        Route::get('club/session/{club_id}', [StudentPwaController::class, 'clubSession'])->name('club.session');
+        Route::post('club/qr/init', [StudentPwaController::class, 'clubQrInit'])->name('club.qr.init');
+        Route::post('club/qr/refresh', [StudentPwaController::class, 'clubQrRefresh'])->name('club.qr.refresh');
+        Route::post('club/qr/close', [StudentPwaController::class, 'clubQrClose'])->name('club.qr.close');
+        Route::get('club/qr/students', [StudentPwaController::class, 'getClubSessionStudents'])->name('club.qr.students');
+        Route::post('club/attendance/submit', [StudentPwaController::class, 'clubSubmitAttendance'])->name('club.attendance.submit');
+        Route::post('club/attendance/geo', [StudentPwaController::class, 'clubGeoMark'])->name('club.attendance.geo');
     });
 });
 

@@ -143,6 +143,16 @@ class DashboardController extends Controller
             );
 
             foreach ($request->attendance as $studentId => $status) {
+                $existing = AttendanceRecord::where('institution_id', $faculty->institution_id)
+                    ->where('student_id', $studentId)
+                    ->where('schedule_id', $schedule->id)
+                    ->where('date', $date)
+                    ->first();
+                    
+                if ($existing && $existing->remarks === 'Club Activity (Verified)') {
+                    continue; // Do not allow faculty to overwrite club excused attendance
+                }
+
                 AttendanceRecord::updateOrCreate(
                     [
                         'institution_id' => $faculty->institution_id,
@@ -447,6 +457,17 @@ class DashboardController extends Controller
             if (!$belongs) {
                 return response()->json(['success' => false, 'message' => 'Student is not enrolled in this section/class.'], 400);
             }
+        }
+
+        // Check if already excused for club
+        $existingRecord = AttendanceRecord::where('institution_id', $session->institution_id)
+            ->where('student_id', $student->id)
+            ->where('schedule_id', $session->schedule_id)
+            ->where('date', $session->date)
+            ->first();
+
+        if ($existingRecord && $existingRecord->remarks === 'Club Activity (Verified)') {
+            return response()->json(['success' => true, 'message' => 'Student is already excused for Club Activity.', 'student' => ['id' => $student->id, 'name' => $student->name]]);
         }
 
         // Mark them present
