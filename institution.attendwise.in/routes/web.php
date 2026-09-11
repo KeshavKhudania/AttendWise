@@ -40,6 +40,8 @@ Route::middleware(CheckLogin::class)->group(function () {
             Route::get("add-front-perm/{perm_name}/{icon}/{sort_order}/{perm_parent}/{perm_type}", "addFrontPerms")->name("addFrontPermFn");
             Route::post("app-errors/resolve/{id}", "resolveError")->name("institution.app-errors.resolve");
             Route::get("attendance-system", "attendanceDashboard")->name("institution.attendance.dashboard");
+            Route::get("analytics/attendance", "attendanceAnalytics")->name("institution.analytics.attendance");
+            Route::get("analytics/attendance/api", "attendanceAnalyticsApi")->name("institution.analytics.attendance.api");
         }
         );
         Route::middleware(CheckRoute::class)->group(function () {

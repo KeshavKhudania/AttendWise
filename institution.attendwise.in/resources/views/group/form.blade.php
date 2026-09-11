@@ -8,7 +8,7 @@
             <p class="text-muted small mb-0">Define user roles, access control levels, and granular route permissions for system users.</p>
         </div>
         <div>
-            <a href="{{ route('institution.group.manage') }}" class="btn btn-light border">
+            <a href="{{ route('institution.admin.group.manage') }}" class="btn btn-light border">
                 <i class="fa fa-arrow-left me-1.5 opacity-75"></i> Back to User Groups
             </a>
         </div>

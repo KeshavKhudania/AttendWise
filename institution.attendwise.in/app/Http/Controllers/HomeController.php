@@ -415,4 +415,215 @@ class HomeController extends Controller
         ];
         return view("profile", $data);
     }
+
+    /**
+     * Attendance Analytics & Stats page (view)
+     */
+    function attendanceAnalytics(Request $req)
+    {
+        $data = [
+            "title" => "Attendance Analytics",
+            "departments" => DB::table('institution_departments')->whereNull('deleted_at')->where('status', 1)->select('id', 'name')->orderBy('name')->get(),
+            "courses" => DB::table('institution_courses')->whereNull('deleted_at')->where('status', 1)->select('id', 'name')->orderBy('name')->get(),
+            "sections" => DB::table('institution_sections')->whereNull('deleted_at')->where('status', 1)->select('id', 'name', 'course_id', 'semester')->orderBy('name')->get(),
+            "subjects" => DB::table('institution_subjects')->whereNull('deleted_at')->where('status', 1)->select('id', 'name', 'code')->orderBy('name')->get(),
+            "faculties" => DB::table('institution_faculties')->whereNull('deleted_at')->where('status', 1)->select('id', 'name', 'employee_code')->orderBy('name')->get(),
+            "allowed_permissions" => unserialize(AdminGroup::find(Crypt::decrypt(Session::get("group_id")))->permissions),
+        ];
+        return view("analytics.attendance", $data);
+    }
+
+    /**
+     * Attendance Analytics API - returns JSON for AJAX filtering
+     */
+    function attendanceAnalyticsApi(Request $req)
+    {
+        $query = DB::table('institution_attendance_records as ar')
+            ->leftJoin('institution_students as s', 'ar.student_id', '=', 's.id')
+            ->leftJoin('institution_schedules as sch', 'ar.schedule_id', '=', 'sch.id')
+            ->leftJoin('institution_subjects as sub', 'sch.subject_id', '=', 'sub.id')
+            ->leftJoin('institution_faculties as f', 'ar.marked_by_faculty_id', '=', 'f.id')
+            ->leftJoin('institution_sections as sec', 'sch.section_id', '=', 'sec.id')
+            ->leftJoin('institution_courses as c', 'sec.course_id', '=', 'c.id')
+            ->leftJoin('institution_departments as d', 'c.department_id', '=', 'd.id')
+            ->whereNull('ar.deleted_at');
+
+        // --- Apply Filters ---
+        if ($req->filled('department_id')) {
+            $query->where('d.id', $req->department_id);
+        }
+        if ($req->filled('course_id')) {
+            $query->where('c.id', $req->course_id);
+        }
+        if ($req->filled('section_id')) {
+            $query->where('sec.id', $req->section_id);
+        }
+        if ($req->filled('subject_id')) {
+            $query->where('sub.id', $req->subject_id);
+        }
+        if ($req->filled('faculty_id')) {
+            $query->where('f.id', $req->faculty_id);
+        }
+        if ($req->filled('student_id')) {
+            $query->where('s.id', $req->student_id);
+        }
+        if ($req->filled('semester')) {
+            $query->where('sec.semester', $req->semester);
+        }
+        if ($req->filled('status')) {
+            $query->where('ar.status', $req->status);
+        }
+        if ($req->filled('date_from')) {
+            $query->where('ar.date', '>=', $req->date_from);
+        }
+        if ($req->filled('date_to')) {
+            $query->where('ar.date', '<=', $req->date_to);
+        }
+        if ($req->filled('day_of_week')) {
+            $query->whereRaw('DAYOFWEEK(ar.date) = ?', [$req->day_of_week]);
+        }
+        if ($req->filled('student_search')) {
+            $query->where(function($q) use ($req) {
+                $q->where('s.name', 'like', '%'.$req->student_search.'%')
+                  ->orWhere('s.roll_number', 'like', '%'.$req->student_search.'%')
+                  ->orWhere('s.enrollment_number', 'like', '%'.$req->student_search.'%');
+            });
+        }
+
+        // Clone for aggregation
+        $totalRecords = (clone $query)->count();
+        $presentCount = (clone $query)->where('ar.status', 'present')->count();
+        $absentCount = (clone $query)->where('ar.status', 'absent')->count();
+        $lateCount = (clone $query)->where('ar.status', 'late')->count();
+        $excusedCount = (clone $query)->where('ar.status', 'excused')->count();
+        $overallPct = $totalRecords > 0 ? round(($presentCount / $totalRecords) * 100, 1) : 0;
+
+        // Daily trend (last 30 days or within date range)
+        $trendFrom = $req->filled('date_from') ? $req->date_from : date('Y-m-d', strtotime('-30 days'));
+        $trendTo = $req->filled('date_to') ? $req->date_to : date('Y-m-d');
+        $dailyTrend = (clone $query)
+            ->whereBetween('ar.date', [$trendFrom, $trendTo])
+            ->select(
+                DB::raw('ar.date as dt'),
+                DB::raw('COUNT(*) as total'),
+                DB::raw("SUM(CASE WHEN ar.status = 'present' THEN 1 ELSE 0 END) as present_count")
+            )
+            ->groupBy('ar.date')
+            ->orderBy('ar.date')
+            ->get()
+            ->map(function($row) {
+                return [
+                    'date' => $row->dt,
+                    'label' => date('M d', strtotime($row->dt)),
+                    'total' => (int)$row->total,
+                    'present' => (int)$row->present_count,
+                    'pct' => $row->total > 0 ? round(($row->present_count / $row->total) * 100, 1) : 0,
+                ];
+            });
+
+        // Subject-wise breakdown
+        $subjectBreakdown = (clone $query)
+            ->select(
+                'sub.name as subject_name',
+                'sub.code as subject_code',
+                DB::raw('COUNT(*) as total'),
+                DB::raw("SUM(CASE WHEN ar.status = 'present' THEN 1 ELSE 0 END) as present_count")
+            )
+            ->whereNotNull('sub.id')
+            ->groupBy('sub.id', 'sub.name', 'sub.code')
+            ->orderByDesc('total')
+            ->limit(15)
+            ->get()
+            ->map(function($row) {
+                return [
+                    'name' => $row->subject_name ?? 'Unknown',
+                    'code' => $row->subject_code ?? '',
+                    'total' => (int)$row->total,
+                    'present' => (int)$row->present_count,
+                    'pct' => $row->total > 0 ? round(($row->present_count / $row->total) * 100, 1) : 0,
+                ];
+            });
+
+        // Faculty-wise breakdown
+        $facultyBreakdown = (clone $query)
+            ->select(
+                'f.name as faculty_name',
+                'f.employee_code',
+                DB::raw('COUNT(*) as total'),
+                DB::raw("SUM(CASE WHEN ar.status = 'present' THEN 1 ELSE 0 END) as present_count")
+            )
+            ->whereNotNull('f.id')
+            ->groupBy('f.id', 'f.name', 'f.employee_code')
+            ->orderByDesc('total')
+            ->limit(10)
+            ->get()
+            ->map(function($row) {
+                return [
+                    'name' => $row->faculty_name ?? 'Unknown',
+                    'code' => $row->employee_code ?? '',
+                    'total' => (int)$row->total,
+                    'present' => (int)$row->present_count,
+                    'pct' => $row->total > 0 ? round(($row->present_count / $row->total) * 100, 1) : 0,
+                ];
+            });
+
+        // Student-level records (paginated)
+        $page = $req->input('page', 1);
+        $perPage = $req->input('per_page', 25);
+        $studentRecords = (clone $query)
+            ->select(
+                's.id as student_id', 's.name as student_name', 's.roll_number',
+                'ar.date', 'ar.status', 'ar.remarks',
+                'sub.name as subject_name', 'sub.code as subject_code',
+                'f.name as faculty_name',
+                'sec.name as section_name', 'c.name as course_name',
+                'sch.day', 'sch.start_time', 'sch.end_time'
+            )
+            ->orderByDesc('ar.date')
+            ->orderBy('s.name')
+            ->offset(($page - 1) * $perPage)
+            ->limit($perPage)
+            ->get();
+
+        // Day-of-week heatmap
+        $dowHeatmap = (clone $query)
+            ->select(
+                DB::raw('DAYOFWEEK(ar.date) as dow'),
+                DB::raw('COUNT(*) as total'),
+                DB::raw("SUM(CASE WHEN ar.status = 'present' THEN 1 ELSE 0 END) as present_count")
+            )
+            ->groupBy(DB::raw('DAYOFWEEK(ar.date)'))
+            ->get()
+            ->map(function($row) {
+                $days = ['', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                return [
+                    'day' => $days[$row->dow] ?? 'N/A',
+                    'total' => (int)$row->total,
+                    'present' => (int)$row->present_count,
+                    'pct' => $row->total > 0 ? round(($row->present_count / $row->total) * 100, 1) : 0,
+                ];
+            });
+
+        return response()->json([
+            'summary' => [
+                'total' => $totalRecords,
+                'present' => $presentCount,
+                'absent' => $absentCount,
+                'late' => $lateCount,
+                'excused' => $excusedCount,
+                'overall_pct' => $overallPct,
+            ],
+            'daily_trend' => $dailyTrend,
+            'subject_breakdown' => $subjectBreakdown,
+            'faculty_breakdown' => $facultyBreakdown,
+            'dow_heatmap' => $dowHeatmap,
+            'records' => $studentRecords,
+            'pagination' => [
+                'page' => (int)$page,
+                'per_page' => (int)$perPage,
+                'total' => $totalRecords,
+                'total_pages' => ceil($totalRecords / $perPage),
+            ],
+        ]);
+    }
 }

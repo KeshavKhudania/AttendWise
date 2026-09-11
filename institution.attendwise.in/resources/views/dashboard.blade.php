@@ -343,6 +343,10 @@
                 <i class="fas fa-download"></i>
                 <span>Export Data</span>
             </button>
+            <a href="{{ route('institution.analytics.attendance') }}" class="btn-adv" style="border-color:#8B5CF6;color:#7C3AED;">
+                <i class="fas fa-chart-bar"></i>
+                <span>Analytics</span>
+            </a>
             <a href="{{ route('institution.events.manage.add.view') }}" class="btn-adv btn-adv-primary">
                 <i class="fas fa-plus"></i>
                 <span>Create Event</span>
