@@ -39,7 +39,7 @@
 </div>
 
 <div id="lecture-selection-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; align-items: center; justify-content: center; padding: 16px;">
-    <div class="glass-card" style="width: 100%; max-width: 400px; padding: 24px; max-height: 80vh; overflow-y: auto; text-align: left;">
+    <div class="glass-card" style="width: 100%; max-width: 460px; padding: 24px; max-height: 85vh; overflow-y: auto; text-align: left;">
         <h3 style="font-weight: 800; font-size: 1.2rem; color: var(--text-main); margin-bottom: 8px;">Select Covered Lectures</h3>
         <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 20px;">Which academic lectures does this club session cover? Members attending will be automatically excused from these overlapping periods.</p>
         
@@ -58,8 +58,73 @@
         </div>
         
         <div id="additional-options-container" style="margin-bottom: 24px; display: none;">
-            <label style="font-size: 0.85rem; font-weight: 700; color: var(--text-main); margin-bottom: 6px; display: block;">Venue (Optional)</label>
-            <input type="text" id="event_venue" placeholder="e.g. Main Auditorium, CS Lab 1" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text-main); margin-bottom: 16px;">
+            <!-- Venue / Location Selection -->
+            <div style="margin-bottom: 16px;">
+                <label style="font-size: 0.85rem; font-weight: 700; color: var(--text-main); margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
+                    <span><i class="fa-solid fa-location-dot" style="color: #4f46e5; margin-right: 4px;"></i> Select Venue / Location</span>
+                    <span id="venue-count-badge" style="font-size: 0.72rem; color: var(--text-muted); font-weight: 600;"></span>
+                </label>
+
+                <!-- Filter Pills: Filter between Block / Venue / Class Room -->
+                <div style="display: flex; gap: 6px; margin-bottom: 10px; overflow-x: auto; padding-bottom: 4px; -webkit-overflow-scrolling: touch;">
+                    <button type="button" class="venue-filter-pill active" onclick="setVenueFilter('all', this)">
+                        All ({{ $venues->count() + $blocks->count() + $classrooms->count() }})
+                    </button>
+                    <button type="button" class="venue-filter-pill" onclick="setVenueFilter('venue', this)">
+                        <i class="fa-solid fa-map-pin"></i> Venues ({{ $venues->count() }})
+                    </button>
+                    <button type="button" class="venue-filter-pill" onclick="setVenueFilter('block', this)">
+                        <i class="fa-solid fa-building"></i> Blocks ({{ $blocks->count() }})
+                    </button>
+                    <button type="button" class="venue-filter-pill" onclick="setVenueFilter('classroom', this)">
+                        <i class="fa-solid fa-chalkboard-user"></i> Class Rooms ({{ $classrooms->count() }})
+                    </button>
+                </div>
+
+                <!-- Secondary Filter: Filter Classrooms by Block -->
+                <div id="block-subfilter-container" style="margin-bottom: 8px; display: none;">
+                    <select id="venue_block_filter" onchange="applyVenueFilters()" style="width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text-main); font-size: 0.8rem; font-weight: 600;">
+                        <option value="">🏢 All Blocks</option>
+                        @foreach($blocks as $b)
+                        <option value="{{ $b->id }}">{{ $b->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <!-- Live Search Box -->
+                <div style="position: relative; margin-bottom: 8px;">
+                    <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 0.75rem; color: var(--text-muted);"></i>
+                    <input type="text" id="venue_search_input" oninput="applyVenueFilters()" placeholder="Filter by name, room # or block..." style="width: 100%; padding: 8px 10px 8px 30px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text-main); font-size: 0.82rem;">
+                </div>
+
+                <!-- Main Dropdown List of Venues -->
+                <div style="position: relative; margin-bottom: 8px;">
+                    <select id="event_venue_select" onchange="onVenueSelectChange(this)" style="width: 100%; padding: 10px 12px; border-radius: 8px; border: 1.5px solid var(--border); background: var(--bg); color: var(--text-main); font-size: 0.85rem; font-weight: 600; cursor: pointer;">
+                        <option value="">-- Choose Venue / Location --</option>
+                    </select>
+                </div>
+
+                <!-- Custom Venue Input (shown when "custom" is selected) -->
+                <div id="custom_venue_container" style="display: none; margin-bottom: 8px;">
+                    <input type="text" id="event_venue_custom" oninput="onCustomVenueInput(this.value)" placeholder="Type custom venue name (e.g. Lawn, Foyer)..." style="width: 100%; padding: 10px; border-radius: 8px; border: 1px dashed #4f46e5; background: var(--bg); color: var(--text-main); font-size: 0.85rem;">
+                </div>
+
+                <!-- Selected Venue Preview Card -->
+                <div id="selected_venue_badge" style="display: none; align-items: center; justify-content: space-between; background: rgba(79, 70, 229, 0.08); border: 1px solid rgba(79, 70, 229, 0.25); border-radius: 8px; padding: 8px 12px; margin-top: 6px;">
+                    <div style="display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: #4f46e5; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                        <i id="selected_venue_icon" class="fa-solid fa-location-dot"></i>
+                        <span id="selected_venue_text" style="overflow: hidden; text-overflow: ellipsis;"></span>
+                    </div>
+                    <button type="button" onclick="clearSelectedVenue()" style="background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 2px 6px; font-size: 0.85rem; flex-shrink: 0;" title="Clear">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+
+                <!-- Hidden inputs for backend submission -->
+                <input type="hidden" id="event_venue" value="">
+                <input type="hidden" id="venue_latitude" value="">
+                <input type="hidden" id="venue_longitude" value="">
+            </div>
             
             <div id="geo-mode-container" style="display: none;">
                 <label style="font-size: 0.85rem; font-weight: 700; color: var(--text-main); margin-bottom: 6px; display: block;">Session Mode</label>

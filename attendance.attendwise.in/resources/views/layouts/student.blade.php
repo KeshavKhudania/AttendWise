@@ -315,6 +315,7 @@
         .toast-error { border-left: 4px solid #000000; }
     </style>
     @yield('styles')
+    @include('layouts.echo-config')
     @vite(['resources/js/app.js'])
 </head>
 <body>

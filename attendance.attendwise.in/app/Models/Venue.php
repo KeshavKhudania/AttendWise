@@ -5,17 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Block extends Model
+class Venue extends Model
 {
     use SoftDeletes;
 
-    protected $table = 'institution_blocks';
+    protected $table = 'institution_venues';
     protected $guarded = ['id'];
-
-    public function classrooms()
-    {
-        return $this->hasMany(Classroom::class, 'block_id');
-    }
 
     public function institution()
     {

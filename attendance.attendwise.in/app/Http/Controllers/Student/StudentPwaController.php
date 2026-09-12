@@ -560,7 +560,23 @@ class StudentPwaController extends Controller
             ->orderBy('start_time')
             ->get();
 
-        return view('student.club.qr', compact('student', 'club', 'existingSession', 'existingRecords', 'clubMembers', 'periods'));
+        $blocks = \App\Models\Block::where('institution_id', $student->institution_id)
+            ->where(function($q) { $q->whereNull('status')->orWhere('status', 1)->orWhere('status', 'active'); })
+            ->orderBy('name')
+            ->get(['id', 'name', 'latitude', 'longitude', 'radius']);
+
+        $venues = \App\Models\Venue::where('institution_id', $student->institution_id)
+            ->where(function($q) { $q->whereNull('status')->orWhere('status', 1)->orWhere('status', 'active'); })
+            ->orderBy('name')
+            ->get(['id', 'name', 'type', 'latitude', 'longitude', 'radius', 'description']);
+
+        $classrooms = \App\Models\Classroom::where('institution_id', $student->institution_id)
+            ->where(function($q) { $q->whereNull('status')->orWhere('status', 1)->orWhere('status', 'active'); })
+            ->with('block:id,name')
+            ->orderBy('name')
+            ->get(['id', 'block_id', 'name', 'floor_number', 'latitude', 'longitude']);
+
+        return view('student.club.qr', compact('student', 'club', 'existingSession', 'existingRecords', 'clubMembers', 'periods', 'blocks', 'venues', 'classrooms'));
     }
 
     public function clubQrInit(Request $request)
@@ -698,6 +714,7 @@ class StudentPwaController extends Controller
                     'start_time' => $request->event_start ?? Carbon::now()->format('H:i:s'),
                     'end_time' => $request->event_end ?? Carbon::now()->addHours(1)->format('H:i:s'),
                     'status' => 'completed',
+                    'venue' => $request->venue,
                 ]
             );
 
