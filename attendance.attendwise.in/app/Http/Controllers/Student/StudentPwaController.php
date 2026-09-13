@@ -778,8 +778,8 @@ class StudentPwaController extends Controller
                                     'date'           => $session->date,
                                 ],
                                 [
-                                    'status'                => 'present',
-                                    'remarks'               => 'Club Activity (Verified)',
+                                    'status'                => 'club_pending',
+                                    'remarks'               => 'Pending Faculty Confirmation (Club)',
                                 ]
                             );
                         }
@@ -885,8 +885,8 @@ class StudentPwaController extends Controller
                         'date'           => $session->date,
                     ],
                     [
-                        'status'                => 'present',
-                        'remarks'               => 'Club Activity (Verified)',
+                        'status'                => 'club_pending',
+                        'remarks'               => 'Pending Faculty Confirmation (Club)',
                     ]
                 );
             }

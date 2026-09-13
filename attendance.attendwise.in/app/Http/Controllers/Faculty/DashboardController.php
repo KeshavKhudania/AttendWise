@@ -142,6 +142,19 @@ class DashboardController extends Controller
                 ]
             );
 
+            // Preemptively upgrade club_pending to present so they show up correctly
+            // (The faculty loop below will overwrite them if the faculty explicitly marks them differently)
+            \App\Models\AttendanceRecord::where('institution_id', $faculty->institution_id)
+                ->where('schedule_id', $schedule->id)
+                ->where('date', $date)
+                ->where('status', 'club_pending')
+                ->update([
+                    'status' => 'present',
+                    'attendance_session_id' => $session->id,
+                    'marked_by_faculty_id' => $faculty->id,
+                    'remarks' => 'Club Activity (Verified by Faculty)'
+                ]);
+
             foreach ($request->attendance as $studentId => $status) {
                 $existing = AttendanceRecord::where('institution_id', $faculty->institution_id)
                     ->where('student_id', $studentId)
@@ -149,7 +162,7 @@ class DashboardController extends Controller
                     ->where('date', $date)
                     ->first();
                     
-                if ($existing && $existing->remarks === 'Club Activity (Verified)') {
+                if ($existing && $existing->remarks === 'Club Activity (Verified by Faculty)') {
                     continue; // Do not allow faculty to overwrite club excused attendance
                 }
 
@@ -195,6 +208,18 @@ class DashboardController extends Controller
                 'is_geofencing' => 1,
             ]
         );
+
+        // Convert any pending club attendance to present since the faculty started the session
+        \App\Models\AttendanceRecord::where('institution_id', $faculty->institution_id)
+            ->where('schedule_id', $schedule->id)
+            ->where('date', Carbon::today()->format('Y-m-d'))
+            ->where('status', 'club_pending')
+            ->update([
+                'status' => 'present',
+                'attendance_session_id' => $session->id,
+                'marked_by_faculty_id' => $faculty->id,
+                'remarks' => 'Club Activity (Verified by Faculty)'
+            ]);
 
         return response()->json([
             'success' => true,
