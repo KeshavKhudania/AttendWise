@@ -68,6 +68,7 @@ Route::prefix('student')->name('student.')->group(function () {
         Route::get('club/qr/students', [StudentPwaController::class, 'getClubSessionStudents'])->name('club.qr.students');
         Route::post('club/attendance/submit', [StudentPwaController::class, 'clubSubmitAttendance'])->name('club.attendance.submit');
         Route::post('club/attendance/geo', [StudentPwaController::class, 'clubGeoMark'])->name('club.attendance.geo');
+        Route::get('club/attendance-session/{uuid}', [StudentPwaController::class, 'clubLiveAttendanceView'])->name('club.attendance.live');
     });
 });
 

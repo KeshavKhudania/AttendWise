@@ -898,4 +898,31 @@ class StudentPwaController extends Controller
             return response()->json(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);
         }
     }
+
+    public function clubLiveAttendanceView($uuid)
+    {
+        $student = Auth::guard('student')->user();
+        
+        $session = AttendanceSession::with('club')
+            ->where('uuid', $uuid)
+            ->where('is_geofencing', 1)
+            ->firstOrFail();
+
+        // Check if student is part of the club
+        $isMember = \App\Models\ClubMember::where('member_id', $student->id)
+            ->where('member_type', 'student')
+            ->where('club_id', $session->club_id)
+            ->exists();
+
+        if (!$isMember) {
+            abort(403, 'You are not a member of this club.');
+        }
+
+        // Check if student has already marked attendance
+        $alreadyMarked = AttendanceRecord::where('attendance_session_id', $session->id)
+            ->where('student_id', $student->id)
+            ->exists();
+
+        return view('student.club.attendance_live', compact('session', 'alreadyMarked'));
+    }
 }

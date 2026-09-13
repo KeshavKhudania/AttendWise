@@ -503,7 +503,7 @@
             
             // Show persistent toasts for existing unmarked active sessions
             @foreach($activeUnmarkedSessions as $session)
-                showClickableToast(`Geo attendance active for {{ $session->club->name ?? 'Club' }}. Click to mark!`, 'success', "{{ route('student.dashboard') }}", "{{ $session->uuid }}");
+                showClickableToast(`Geo attendance active for {{ $session->club->name ?? 'Club' }}. Click to mark!`, 'success', "{{ route('club.attendance.live', ['uuid' => $session->uuid]) }}", "{{ $session->uuid }}");
             @endforeach
 
             if (window.Echo) {
@@ -511,7 +511,7 @@
                     window.Echo.private('club.{{ $cId }}')
                         .listen('.ClubGeoSessionStarted', (e) => {
                             if (e.startedBy != {{ auth('student')->id() }}) {
-                                showClickableToast(`Geo attendance started for ${e.clubName}. Click to mark!`, 'success', "{{ route('student.dashboard') }}", e.uuid);
+                                showClickableToast(`Geo attendance started for ${e.clubName}. Click to mark!`, 'success', `/student/club/attendance-session/${e.uuid}`, e.uuid);
                             }
                         })
                         .listen('.ClubGeoSessionClosed', (e) => {
