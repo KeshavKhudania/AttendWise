@@ -155,9 +155,14 @@
         <h3 style="font-weight: 800; font-size: 1.2rem; color: var(--text-main); margin-bottom: 4px;" id="session-title">
             {{ $existingSession && $existingSession->is_geofencing ? 'Geo-Location Active' : 'Dynamic QR Code' }}
         </h3>
-        <p style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 16px;" id="session-desc">
+        <p style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 8px;" id="session-desc">
             {{ $existingSession && $existingSession->is_geofencing ? 'Members can self-mark attendance if they are near your location.' : 'Ask members to scan this code. It refreshes every 8 seconds.' }}
         </p>
+
+        <div id="active-session-venue-badge" style="display: {{ $existingSession && $existingSession->venue ? 'inline-flex' : 'none' }}; align-items: center; gap: 6px; background: rgba(79, 70, 229, 0.1); color: #4f46e5; padding: 6px 14px; border-radius: 20px; font-size: 0.8rem; font-weight: 700; margin-bottom: 16px;">
+            <i class="fa-solid fa-location-dot"></i>
+            <span id="active-session-venue-text">{{ $existingSession->venue ?? '' }}</span>
+        </div>
         
         <div id="qrcode-display" style="padding: 16px; background: white; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid #eee; margin-bottom: 16px; {{ $existingSession && $existingSession->is_geofencing ? 'display: none;' : '' }}"></div>
         
@@ -193,9 +198,15 @@
         <input type="hidden" name="club_id" value="{{ $club->id }}">
         <input type="hidden" name="event_start" id="manual_event_start">
         <input type="hidden" name="event_end" id="manual_event_end">
+        <input type="hidden" name="venue" id="manual_venue">
         
         <div class="glass-card" style="padding: 16px; margin-bottom: 16px;">
-            <h4 style="font-weight: 800; font-size: 1.1rem; color: var(--text-main); margin-bottom: 12px;">Club Roster</h4>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h4 style="font-weight: 800; font-size: 1.1rem; color: var(--text-main); margin: 0;">Club Roster</h4>
+                <div id="manual-venue-tag" style="display: none; align-items: center; gap: 6px; background: rgba(79, 70, 229, 0.1); color: #4f46e5; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 700;">
+                    <i class="fa-solid fa-location-dot"></i> <span id="manual-venue-display"></span>
+                </div>
+            </div>
             
             @forelse($clubMembers as $member)
                 @if($member->member_type === 'student')
@@ -230,6 +241,33 @@
 </div>
 
 <style>
+    .venue-filter-pill {
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        border: 1px solid var(--border);
+        background: var(--bg);
+        color: var(--text-muted);
+        cursor: pointer;
+        white-space: nowrap;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        flex-shrink: 0;
+    }
+    .venue-filter-pill:hover {
+        border-color: #4f46e5;
+        color: #4f46e5;
+    }
+    .venue-filter-pill.active {
+        background: #4f46e5;
+        color: #ffffff !important;
+        border-color: #4f46e5;
+        box-shadow: 0 2px 6px rgba(79, 70, 229, 0.25);
+    }
+
     .attendee-item {
         display: flex;
         align-items: center;
@@ -259,6 +297,224 @@
     let presentStudentIds = new Set();
     
     let pendingSessionType = null;
+
+    // Master dataset for Venues, Blocks, and Classrooms
+    const allVenueData = [
+        // Designated Venues
+        @foreach($venues as $v)
+        {
+            type: 'venue',
+            typeLabel: 'Venue',
+            id: {{ $v->id }},
+            name: @json($v->name),
+            detail: @json($v->type ? "Type: {$v->type}" : ($v->description ?? 'Campus Venue')),
+            display: @json($v->name . ($v->type ? " ({$v->type})" : '')),
+            blockId: null,
+            lat: @json($v->latitude ?? null),
+            lng: @json($v->longitude ?? null),
+        },
+        @endforeach
+
+        // Blocks
+        @foreach($blocks as $b)
+        {
+            type: 'block',
+            typeLabel: 'Block',
+            id: {{ $b->id }},
+            name: @json($b->name),
+            detail: 'Academic Block',
+            display: @json($b->name),
+            blockId: {{ $b->id }},
+            lat: @json($b->latitude ?? null),
+            lng: @json($b->longitude ?? null),
+        },
+        @endforeach
+
+        // Classrooms
+        @foreach($classrooms as $c)
+        {
+            type: 'classroom',
+            typeLabel: 'Class Room',
+            id: {{ $c->id }},
+            name: @json($c->name),
+            detail: @json(($c->block ? $c->block->name : 'No Block') . ($c->floor_number ? " • Floor {$c->floor_number}" : '')),
+            display: @json("Room {$c->name}" . ($c->block ? " ({$c->block->name})" : '')),
+            blockId: {{ $c->block_id ?? 'null' }},
+            lat: @json($c->latitude ?? null),
+            lng: @json($c->longitude ?? null),
+        },
+        @endforeach
+    ];
+
+    let currentFilterType = 'all';
+
+    function setVenueFilter(type, btnElement) {
+        currentFilterType = type;
+        
+        document.querySelectorAll('.venue-filter-pill').forEach(pill => {
+            pill.classList.remove('active');
+        });
+        if (btnElement) {
+            btnElement.classList.add('active');
+        }
+        
+        const blockSubFilter = document.getElementById('block-subfilter-container');
+        if (type === 'classroom' || type === 'all') {
+            blockSubFilter.style.display = 'block';
+        } else {
+            blockSubFilter.style.display = 'none';
+            const blockSelect = document.getElementById('venue_block_filter');
+            if (blockSelect) blockSelect.value = '';
+        }
+        
+        applyVenueFilters();
+    }
+
+    function applyVenueFilters() {
+        const searchTerm = (document.getElementById('venue_search_input')?.value || '').toLowerCase().trim();
+        const selectedBlockId = document.getElementById('venue_block_filter')?.value;
+        const select = document.getElementById('event_venue_select');
+        if (!select) return;
+        
+        const previousValue = select.value;
+        select.innerHTML = '<option value="">-- Choose Venue / Location --</option>';
+        
+        const filtered = allVenueData.filter(item => {
+            if (currentFilterType !== 'all' && item.type !== currentFilterType) {
+                return false;
+            }
+            if (selectedBlockId && item.type === 'classroom' && String(item.blockId) !== String(selectedBlockId)) {
+                return false;
+            }
+            if (selectedBlockId && item.type === 'block' && String(item.id) !== String(selectedBlockId)) {
+                return false;
+            }
+            if (searchTerm) {
+                const matchName = (item.name || '').toLowerCase().includes(searchTerm);
+                const matchDisplay = (item.display || '').toLowerCase().includes(searchTerm);
+                const matchDetail = (item.detail || '').toLowerCase().includes(searchTerm);
+                if (!matchName && !matchDisplay && !matchDetail) {
+                    return false;
+                }
+            }
+            return true;
+        });
+        
+        const badge = document.getElementById('venue-count-badge');
+        if (badge) {
+            badge.innerText = `${filtered.length} locations`;
+        }
+        
+        if (currentFilterType === 'all') {
+            const groups = {
+                venue: { label: '📍 Venues', items: [] },
+                block: { label: '🏢 Blocks', items: [] },
+                classroom: { label: '🚪 Class Rooms', items: [] },
+            };
+            
+            filtered.forEach(item => {
+                if (groups[item.type]) {
+                    groups[item.type].items.push(item);
+                }
+            });
+            
+            Object.keys(groups).forEach(gKey => {
+                const g = groups[gKey];
+                if (g.items.length > 0) {
+                    const optgroup = document.createElement('optgroup');
+                    optgroup.label = `${g.label} (${g.items.length})`;
+                    g.items.forEach(item => {
+                        const opt = document.createElement('option');
+                        opt.value = item.display;
+                        opt.textContent = `${item.display} — ${item.detail}`;
+                        opt.dataset.lat = item.lat || '';
+                        opt.dataset.lng = item.lng || '';
+                        opt.dataset.type = item.type;
+                        optgroup.appendChild(opt);
+                    });
+                    select.appendChild(optgroup);
+                }
+            });
+        } else {
+            filtered.forEach(item => {
+                const opt = document.createElement('option');
+                opt.value = item.display;
+                opt.textContent = `${item.display} — ${item.detail}`;
+                opt.dataset.lat = item.lat || '';
+                opt.dataset.lng = item.lng || '';
+                opt.dataset.type = item.type;
+                select.appendChild(opt);
+            });
+        }
+        
+        // Custom option
+        const customOpt = document.createElement('option');
+        customOpt.value = '__custom__';
+        customOpt.textContent = '✏️ + Enter Custom Venue...';
+        select.appendChild(customOpt);
+        
+        if (previousValue && Array.from(select.options).some(o => o.value === previousValue)) {
+            select.value = previousValue;
+        }
+    }
+
+    function onVenueSelectChange(select) {
+        const val = select.value;
+        const customContainer = document.getElementById('custom_venue_container');
+        const selectedOption = select.options[select.selectedIndex];
+        
+        if (val === '__custom__') {
+            customContainer.style.display = 'block';
+            const customVal = document.getElementById('event_venue_custom').value;
+            document.getElementById('event_venue').value = customVal;
+            updateSelectedBadge('✏️ Custom: ' + (customVal || 'Typing...'), 'fa-pen');
+        } else if (val) {
+            customContainer.style.display = 'none';
+            document.getElementById('event_venue').value = val;
+            
+            const lat = selectedOption.dataset.lat;
+            const lng = selectedOption.dataset.lng;
+            document.getElementById('venue_latitude').value = lat || '';
+            document.getElementById('venue_longitude').value = lng || '';
+            
+            const type = selectedOption.dataset.type;
+            const icon = type === 'block' ? 'fa-building' : (type === 'classroom' ? 'fa-chalkboard-user' : 'fa-map-pin');
+            updateSelectedBadge(val, icon);
+        } else {
+            customContainer.style.display = 'none';
+            clearSelectedVenue();
+        }
+    }
+
+    function onCustomVenueInput(text) {
+        document.getElementById('event_venue').value = text;
+        updateSelectedBadge('✏️ ' + (text || 'Custom Venue'), 'fa-pen');
+    }
+
+    function updateSelectedBadge(text, iconClass) {
+        const badge = document.getElementById('selected_venue_badge');
+        const badgeText = document.getElementById('selected_venue_text');
+        const badgeIcon = document.getElementById('selected_venue_icon');
+        if (!badge || !badgeText || !badgeIcon) return;
+        
+        badgeText.innerText = text;
+        badgeIcon.className = `fa-solid ${iconClass || 'fa-location-dot'}`;
+        badge.style.display = 'flex';
+    }
+
+    function clearSelectedVenue() {
+        const select = document.getElementById('event_venue_select');
+        if (select) select.value = '';
+        document.getElementById('event_venue').value = '';
+        document.getElementById('venue_latitude').value = '';
+        document.getElementById('venue_longitude').value = '';
+        const customContainer = document.getElementById('custom_venue_container');
+        if (customContainer) customContainer.style.display = 'none';
+        const customInput = document.getElementById('event_venue_custom');
+        if (customInput) customInput.value = '';
+        const badge = document.getElementById('selected_venue_badge');
+        if (badge) badge.style.display = 'none';
+    }
     
     function openLectureModal(type) {
         pendingSessionType = type;
@@ -307,6 +563,7 @@
     }
 
     document.addEventListener("DOMContentLoaded", function() {
+        applyVenueFilters();
         if (currentSessionUuid) {
             startQrLoop();
         }
@@ -315,6 +572,17 @@
     function openManualRoster() {
         document.getElementById('manual_event_start').value = document.getElementById('event_start').value;
         document.getElementById('manual_event_end').value = document.getElementById('event_end').value;
+        
+        const venue = document.getElementById('event_venue').value;
+        document.getElementById('manual_venue').value = venue;
+        const manualVenueDisplay = document.getElementById('manual-venue-display');
+        const manualVenueTag = document.getElementById('manual-venue-tag');
+        if (venue) {
+            if (manualVenueDisplay) manualVenueDisplay.innerText = venue;
+            if (manualVenueTag) manualVenueTag.style.display = 'inline-flex';
+        } else {
+            if (manualVenueTag) manualVenueTag.style.display = 'none';
+        }
         
         document.getElementById('init-session-container').style.display = 'none';
         document.getElementById('manual-roster-container').style.display = 'block';
@@ -336,6 +604,8 @@
         
         const mode = document.querySelector('input[name="geo_mode"]:checked').value;
         const venue = document.getElementById('event_venue').value;
+        const venueLat = document.getElementById('venue_latitude').value;
+        const venueLng = document.getElementById('venue_longitude').value;
         
         navigator.geolocation.getCurrentPosition(function(position) {
             fetch('{{ route("student.club.qr.init") }}', {
@@ -347,8 +617,8 @@
                 body: JSON.stringify({ 
                     club_id: {{ $club->id }},
                     is_geofencing: 1,
-                    latitude: position.coords.latitude,
-                    longitude: position.coords.longitude,
+                    latitude: position.coords.latitude || venueLat,
+                    longitude: position.coords.longitude || venueLng,
                     event_start: document.getElementById('event_start').value,
                     event_end: document.getElementById('event_end').value,
                     status: mode,
@@ -373,6 +643,12 @@
                     document.getElementById('session-desc').innerText = 'Members can self-mark attendance if they are near your location.';
                     document.getElementById('qrcode-display').style.display = 'none';
                     document.getElementById('qr-timer-bar-container').style.display = 'none';
+                    if (venue) {
+                        const venueText = document.getElementById('active-session-venue-text');
+                        const venueBadge = document.getElementById('active-session-venue-badge');
+                        if (venueText) venueText.innerText = venue;
+                        if (venueBadge) venueBadge.style.display = 'inline-flex';
+                    }
                     
                     // Polling for live students only (no QR refresh needed)
                     syncStudents();
@@ -393,6 +669,8 @@
 
     function initQrSession() {
         const venue = document.getElementById('event_venue').value;
+        const venueLat = document.getElementById('venue_latitude').value;
+        const venueLng = document.getElementById('venue_longitude').value;
         
         fetch('{{ route("student.club.qr.init") }}', {
             method: 'POST',
@@ -403,6 +681,8 @@
             body: JSON.stringify({ 
                 club_id: {{ $club->id }},
                 is_geofencing: 0,
+                latitude: venueLat || null,
+                longitude: venueLng || null,
                 event_start: document.getElementById('event_start').value,
                 event_end: document.getElementById('event_end').value,
                 venue: venue
@@ -414,6 +694,12 @@
                 currentSessionUuid = data.uuid;
                 document.getElementById('init-session-container').style.display = 'none';
                 document.getElementById('qr-session-container').style.display = 'block';
+                if (venue) {
+                    const venueText = document.getElementById('active-session-venue-text');
+                    const venueBadge = document.getElementById('active-session-venue-badge');
+                    if (venueText) venueText.innerText = venue;
+                    if (venueBadge) venueBadge.style.display = 'inline-flex';
+                }
                 startQrLoop();
             } else {
                 alert(data.message || 'Error initializing session');
