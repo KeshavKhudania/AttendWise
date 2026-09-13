@@ -20,3 +20,12 @@ Broadcast::channel('attendance.session.{uuid}', function ($user, $uuid) {
     
     return false;
 }, ['guards' => ['faculty', 'student']]);
+
+Broadcast::channel('club.{clubId}', function ($user, $clubId) {
+    if (get_class($user) !== \App\Models\Student::class) return false;
+    
+    return \App\Models\ClubMember::where('club_id', $clubId)
+        ->where('member_id', $user->id)
+        ->where('member_type', 'student')
+        ->exists();
+}, ['guards' => ['student']]);

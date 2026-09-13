@@ -473,5 +473,87 @@
         };
     </script>
     @yield('scripts')
+    
+    @auth('student')
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            @php
+                $activeUnmarkedSessions = collect();
+                $myClubIds = collect();
+                if (auth('student')->check()) {
+                    $studentId = auth('student')->id();
+                    $today = \Carbon\Carbon::today()->format('Y-m-d');
+                    
+                    $myClubIds = \App\Models\ClubMember::where('member_id', $studentId)
+                            ->where('member_type', 'student')
+                            ->pluck('club_id');
+
+                    $activeUnmarkedSessions = \App\Models\AttendanceSession::whereIn('club_id', $myClubIds)
+                        ->where('date', $today)
+                        ->where('status', 'active')
+                        ->where('is_geofencing', 1)
+                        ->where('started_by_student_id', '!=', $studentId)
+                        ->with('club')
+                        ->whereDoesntHave('records', function($q) use ($studentId) {
+                            $q->where('student_id', $studentId);
+                        })
+                        ->get();
+                }
+            @endphp
+            
+            // Show persistent toasts for existing unmarked active sessions
+            @foreach($activeUnmarkedSessions as $session)
+                showClickableToast(`Geo attendance active for {{ $session->club->name ?? 'Club' }}. Click to mark!`, 'success', "{{ route('student.dashboard') }}", "{{ $session->uuid }}");
+            @endforeach
+
+            if (window.Echo) {
+                @foreach($myClubIds as $cId)
+                    window.Echo.private('club.{{ $cId }}')
+                        .listen('.ClubGeoSessionStarted', (e) => {
+                            if (e.startedBy != {{ auth('student')->id() }}) {
+                                showClickableToast(`Geo attendance started for ${e.clubName}. Click to mark!`, 'success', "{{ route('student.dashboard') }}", e.uuid);
+                            }
+                        })
+                        .listen('.ClubGeoSessionClosed', (e) => {
+                            removeToast(e.uuid);
+                        });
+                @endforeach
+            }
+        });
+        
+        function showClickableToast(message, type = 'success', url = '#', sessionUuid = null) {
+            const container = document.getElementById('toastContainer');
+            // Prevent duplicate toasts for the same session
+            if (sessionUuid && document.getElementById(`toast-${sessionUuid}`)) return;
+
+            const toast = document.createElement('div');
+            toast.className = `toast-msg toast-${type}`;
+            if (sessionUuid) toast.id = `toast-${sessionUuid}`;
+            toast.style.cursor = 'pointer';
+            toast.onclick = () => window.location.href = url;
+            const icon = type === 'success' ? 'fa-circle-check' : 'fa-circle-exclamation';
+            toast.innerHTML = `<i class="fa-solid ${icon}" style="font-size: 1.2rem;"></i> <span>${message}</span>`;
+            container.appendChild(toast);
+
+            setTimeout(() => toast.classList.add('show'), 50);
+            
+            // If it's a persistent session notification, don't auto remove
+            if (!sessionUuid) {
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                    setTimeout(() => toast.remove(), 300);
+                }, 10000);
+            }
+        }
+
+        function removeToast(sessionUuid) {
+            const toast = document.getElementById(`toast-${sessionUuid}`);
+            if (toast) {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }
+        }
+    </script>
+    @endauth
 </body>
 </html>

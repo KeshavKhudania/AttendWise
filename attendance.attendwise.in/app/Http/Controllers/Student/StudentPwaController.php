@@ -588,6 +588,7 @@ class StudentPwaController extends Controller
             ->where('member_id', $student->id)
             ->where('member_type', 'student')
             ->where('can_take_attendance', 1)
+            ->with('club')
             ->firstOrFail();
 
         $status = $request->status ?? 'active';
@@ -609,6 +610,20 @@ class StudentPwaController extends Controller
                 'venue' => $request->venue,
             ]
         );
+
+        if ($session->is_geofencing == 1) {
+            try {
+                event(new \App\Events\ClubGeoSessionStarted(
+                    $clubId,
+                    $session->uuid,
+                    $membership->club->name ?? 'Club Activity',
+                    $session->venue,
+                    $student->id
+                ));
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::warning('Failed to broadcast geo session start: ' . $e->getMessage());
+            }
+        }
 
         return response()->json([
             'success' => true,
@@ -676,6 +691,9 @@ class StudentPwaController extends Controller
         
         try {
             event(new \App\Events\LiveAttendanceAction($session->uuid, 'session_ended', []));
+            if ($session->is_geofencing == 1) {
+                event(new \App\Events\ClubGeoSessionClosed($session->club_id, $session->uuid));
+            }
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::warning('WebSocket broadcast failed: ' . $e->getMessage());
         }
