@@ -832,7 +832,7 @@ class StudentPwaController extends Controller
             $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
             $distance = $earthRadius * $c;
 
-            $allowedRadius = 150; 
+            $allowedRadius = 30; 
 
             if ($distance > $allowedRadius) {
                 return response()->json([
