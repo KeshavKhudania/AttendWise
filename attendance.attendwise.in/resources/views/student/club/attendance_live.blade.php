@@ -95,7 +95,7 @@ function markLiveAttendance() {
     navigator.geolocation.getCurrentPosition(function(position) {
         btn.innerHTML = '<i class="fa-solid fa-spinner"></i> Verifying...';
         
-        fetch('{{ route("club.attendance.geo") }}', {
+        fetch('{{ route("student.club.attendance.geo") }}', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

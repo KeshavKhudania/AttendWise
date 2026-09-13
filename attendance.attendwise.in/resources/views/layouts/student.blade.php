@@ -503,7 +503,7 @@
             
             // Show persistent toasts for existing unmarked active sessions
             @foreach($activeUnmarkedSessions as $session)
-                showClickableToast(`Geo attendance active for {{ $session->club->name ?? 'Club' }}. Click to mark!`, 'success', "{{ route('club.attendance.live', ['uuid' => $session->uuid]) }}", "{{ $session->uuid }}");
+                showClickableToast(`Geo attendance active for {{ $session->club->name ?? 'Club' }}. Click to mark!`, 'success', "{{ route('student.club.attendance.live', ['uuid' => $session->uuid]) }}", "{{ $session->uuid }}");
             @endforeach
 
             if (window.Echo) {
