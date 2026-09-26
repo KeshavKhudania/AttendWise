@@ -8,7 +8,7 @@
             <p class="text-muted small mb-0">Define building block identifiers and map physical perimeter coordinates for geofencing.</p>
         </div>
         <div>
-            <a href="{{ route('institution.block.manage') }}" class="btn btn-light border">
+            <a href="{{ route('institution.blocks.manage') }}" class="btn btn-light border">
                 <i class="fa fa-arrow-left me-1.5 opacity-75"></i> Back to Blocks
             </a>
         </div>
@@ -45,7 +45,7 @@
                         <div class="aw-field-group">
                             <label for="name" class="form-label aw-field-label">Block Name <span class="aw-field-required">*</span></label>
                             <input type="text" name="name" id="name" class="form-control" required
-                                placeholder="e.g. Science & Technology Block - North Wing" value="{{ old('name', $block->name ?? '') }}">
+                                placeholder="e.g. Science & Technology Block - North Wing" value="{{ old('name', data_get($block, 'name', '')) }}">
                         </div>
                     </div>
 
@@ -75,7 +75,7 @@
 
                             {{-- Hidden JSON field --}}
                             <input type="hidden" name="latlng" id="latlng"
-                                value="{{ old('latlng', is_array($block['latlng'] ?? null) ? json_encode($block['latlng']) : ($block['latlng'] ?? '')) }}">
+                                value="{{ old('latlng', is_array(data_get($block, 'latlng')) ? json_encode(data_get($block, 'latlng')) : data_get($block, 'latlng', '')) }}">
                         </div>
                     </div>
 

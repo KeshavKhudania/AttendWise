@@ -189,11 +189,16 @@
             <span style="font-size: 0.78rem; font-weight: 700; color: #555555; text-transform: uppercase; letter-spacing: 0.5px;">Student PWA</span>
         </div>
 
-        <a href="{{ route('faculty.login') }}" class="faculty-link-pill">
-            <i class="fa-solid fa-chalkboard-user"></i>
-            <span>Faculty Login</span>
-            <i class="fa-solid fa-chevron-right" style="font-size: 0.7rem; color: #888888;"></i>
-        </a>
+        <div style="display: flex; gap: 8px;">
+            <a href="{{ route('club.login') }}" class="faculty-link-pill">
+                <i class="fa-solid fa-users"></i>
+                <span>Club Login</span>
+            </a>
+            <a href="{{ route('faculty.login') }}" class="faculty-link-pill">
+                <i class="fa-solid fa-chalkboard-user"></i>
+                <span>Faculty Login</span>
+            </a>
+        </div>
     </div>
 
     <!-- Light Theme Login Form Card -->

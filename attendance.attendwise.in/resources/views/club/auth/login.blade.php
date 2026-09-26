@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Faculty Login - AttendWise</title>
+    <title>Club Login - AttendWise</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root[data-theme="light"] {
@@ -135,27 +135,6 @@
             cursor: pointer;
             color: var(--text-main);
         }
-
-        .link-pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            background: var(--subtle-bg);
-            border: 1px solid var(--border);
-            color: var(--text-main);
-            text-decoration: none;
-            padding: 8px 14px;
-            border-radius: 16px;
-            font-size: 0.82rem;
-            font-weight: 700;
-            transition: all 0.2s ease;
-        }
-
-        .link-pill:hover {
-            background: var(--hover-bg);
-            border-color: var(--text-muted);
-            transform: translateY(-1px);
-        }
     </style>
 
     <button class="theme-float" id="theme-toggle">
@@ -164,36 +143,26 @@
     </button>
 
     <div class="login-container">
-        <div style="display: flex; justify-content: flex-end; gap: 8px; margin-bottom: 16px;">
-            <a href="{{ route('student.login') }}" class="link-pill">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
-                <span>Student Login</span>
-            </a>
-            <a href="{{ route('club.login') }}" class="link-pill">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                <span>Club Login</span>
-            </a>
-        </div>
         <div class="login-card">
             <div class="header">
                 <div class="logo" style="background: transparent; box-shadow: none;">
                     <img src="{{ asset('assets/images/logo.png') }}" alt="AttendWise" style="height: 64px; width: auto;">
                 </div>
-                <h1>Faculty Access</h1>
-                <p>Welcome to AttendWise Institution Portal</p>
+                <h1>Club Access</h1>
+                <p>Welcome to AttendWise Club Portal</p>
             </div>
 
-            <form action="{{ route('faculty.login') }}" method="POST">
+            <form action="{{ route('club.login') }}" method="POST">
                 @csrf
                 <div class="form-group">
-                    <label>Professional Email</label>
-                    <input type="email" name="email" value="{{ old('email') }}" required placeholder="name@college.edu">
+                    <label>Club Email</label>
+                    <input type="email" name="email" value="{{ old('email') }}" required placeholder="club@institution.edu">
                     @error('email') <div class="error-msg">{{ $message }}</div> @enderror
                 </div>
                 <div class="form-group">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                        <label style="margin: 0;">Secret Password</label>
-                        <a href="#" style="font-size: 0.75rem; color: var(--text-muted); text-decoration: none; font-weight: 500;">Forgot Code?</a>
+                        <label style="margin: 0;">Password</label>
+                        <a href="#" style="font-size: 0.75rem; color: var(--text-muted); text-decoration: none; font-weight: 500;">Forgot Password?</a>
                     </div>
                     <input type="password" name="password" required placeholder="••••••••">
                     @error('password') <div class="error-msg">{{ $message }}</div> @enderror
@@ -215,7 +184,6 @@
     </div>
 
     <script>
-
         const themeToggle = document.getElementById('theme-toggle');
         const sunIcon = document.querySelector('.sun-icon');
         const moonIcon = document.querySelector('.moon-icon');

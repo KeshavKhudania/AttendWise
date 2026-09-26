@@ -52,6 +52,11 @@ return [
             'driver' => 'session',
             'provider' => 'students',
         ],
+
+        'club' => [
+            'driver' => 'session',
+            'provider' => 'clubs',
+        ],
     ],
 
     /*
@@ -85,6 +90,11 @@ return [
         'students' => [
             'driver' => 'eloquent',
             'model' => App\Models\Student::class,
+        ],
+
+        'clubs' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\ClubManager::class,
         ],
     ],
 

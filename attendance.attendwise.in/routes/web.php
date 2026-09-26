@@ -77,4 +77,37 @@ Route::prefix('api/v1')->group(function() {
     Route::post('attendance/mark-qr', [DashboardController::class, 'markAttendanceByQR']);
 });
 
+// Club Dedicated Panel Routes
+use App\Http\Controllers\Club\ClubLoginController;
+use App\Http\Controllers\Club\DashboardController as ClubDashboardController;
 
+Route::prefix('club')->name('club.')->group(function () {
+    Route::get('login', [ClubLoginController::class, 'showLoginForm'])->name('login');
+    Route::post('login', [ClubLoginController::class, 'login'])->name('login.post');
+    Route::post('logout', [ClubLoginController::class, 'logout'])->name('logout');
+
+    Route::middleware(['auth:club'])->group(function () {
+        Route::get('dashboard', [ClubDashboardController::class, 'index'])->name('dashboard');
+        Route::get('members', [ClubDashboardController::class, 'members'])->name('members');
+        Route::post('members/add', [ClubDashboardController::class, 'addMember'])->name('members.add');
+        Route::post('members/{id}/update', [ClubDashboardController::class, 'updateMember'])->name('members.update');
+        Route::post('members/{id}/remove', [ClubDashboardController::class, 'removeMember'])->name('members.remove');
+        Route::get('groups', [ClubDashboardController::class, 'groups'])->name('groups');
+        Route::post('groups/add', [ClubDashboardController::class, 'addGroup'])->name('groups.add');
+        Route::post('groups/{id}/update', [ClubDashboardController::class, 'updateGroup'])->name('groups.update');
+        Route::post('groups/{id}/remove', [ClubDashboardController::class, 'removeGroup'])->name('groups.remove');
+        Route::get('events', [ClubDashboardController::class, 'events'])->name('events');
+        Route::post('events/add', [ClubDashboardController::class, 'addEvent'])->name('events.add');
+        Route::post('events/{id}/update', [ClubDashboardController::class, 'updateEvent'])->name('events.update');
+        Route::post('events/{id}/remove', [ClubDashboardController::class, 'removeEvent'])->name('events.remove');
+        Route::get('locations/search', [ClubDashboardController::class, 'searchLocations'])->name('locations.search');
+        
+        Route::get('attendance', [ClubDashboardController::class, 'attendance'])->name('attendance');
+        Route::get('attendance/event/{event_id}/init', [ClubDashboardController::class, 'attendanceInitEvent'])->name('attendance.init_event');
+        Route::post('attendance/adhoc/start', [ClubDashboardController::class, 'attendanceStartAdhoc'])->name('attendance.start_adhoc');
+        Route::get('attendance/session/{session_id}', [ClubDashboardController::class, 'attendanceManage'])->name('attendance.manage');
+        Route::post('attendance/session/{session_id}/mark', [ClubDashboardController::class, 'attendanceMark'])->name('attendance.mark');
+        Route::post('attendance/session/{session_id}/qr-refresh', [ClubDashboardController::class, 'qrRefresh'])->name('attendance.qr.refresh');
+        Route::post('attendance/session/{session_id}/geo-toggle', [ClubDashboardController::class, 'toggleGeoLocation'])->name('attendance.geo.toggle');
+    });
+});

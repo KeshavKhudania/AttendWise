@@ -32,4 +32,19 @@ class ClubMember extends Model
             return $this->belongsTo(Faculty::class , 'member_id');
         }
     }
+
+    public function student()
+    {
+        return $this->belongsTo(Student::class, 'member_id');
+    }
+
+    public function faculty()
+    {
+        return $this->belongsTo(Faculty::class, 'member_id');
+    }
+
+    public function userGroup()
+    {
+        return $this->belongsTo(ClubUserGroup::class, 'club_user_group_id');
+    }
 }

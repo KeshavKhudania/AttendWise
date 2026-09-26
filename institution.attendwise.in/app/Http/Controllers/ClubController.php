@@ -6,6 +6,8 @@ use App\Models\Club;
 use App\Models\ClubMember;
 use App\Models\Student;
 use App\Models\Faculty;
+use App\Models\ClubManager;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Schema;
@@ -117,12 +119,15 @@ class ClubController extends Controller
         $students = Student::where('institution_id', $institutionId)->where('status', 1)->get();
         $faculties = Faculty::where('institution_id', $institutionId)->where('status', 1)->get();
 
+        $managers = ClubManager::where('club_id', $clubId)->get();
+
         $data = [
             'title' => $club->name . ' - Manage Members',
             'club' => $club,
             'members' => $members,
             'students' => $students,
-            'faculties' => $faculties
+            'faculties' => $faculties,
+            'managers' => $managers
         ];
 
         return view('club.members', $data);
@@ -198,6 +203,68 @@ class ClubController extends Controller
                 ->delete();
 
             return json_encode(["msg" => "Member removed.", "color" => "success", "icon" => "check-circle"]);
+        }
+        catch (\Throwable $th) {
+            return abort(401);
+        }
+    }
+
+    // RBAC Manager section
+    public function addManager(Request $request, $encodedId)
+    {
+        $request->validate([
+            'club_member_id' => 'required|integer',
+            'role' => 'required|in:admin,event_manager,member_manager',
+        ]);
+
+        $clubId = Crypt::decrypt($encodedId);
+        $institutionId = get_logged_in_user()->institution_id;
+
+        // Fetch the club member
+        $clubMember = ClubMember::where('institution_id', $institutionId)
+            ->where('club_id', $clubId)
+            ->findOrFail($request->club_member_id);
+
+        // Fetch the user to get name and email
+        if ($clubMember->member_type === 'student') {
+            $user = Student::where('institution_id', $institutionId)->findOrFail($clubMember->member_id);
+            $email = $user->email ?? $user->roll_number . '@student.attendwise.in'; // Fallback if no email
+        } else {
+            $user = Faculty::where('institution_id', $institutionId)->findOrFail($clubMember->member_id);
+            $email = $user->email;
+        }
+
+        // Check if email already exists as a manager for this club
+        $exists = ClubManager::where('club_id', $clubId)
+            ->where('email', $email)
+            ->exists();
+
+        if ($exists) {
+            return redirect()->back()->with(['msg' => 'This user is already a manager for this club.', 'color' => 'warning']);
+        }
+
+        ClubManager::create([
+            'club_id' => $clubId,
+            'name' => $user->name,
+            'email' => $email,
+            'password' => Hash::make('password123'),
+            'role' => $request->role,
+        ]);
+
+        return redirect()->back()->with(['msg' => 'Manager added successfully. Default password is: password123', 'color' => 'success']);
+    }
+
+    public function removeManager(Request $request, $encodedClubId, $encodedManagerId)
+    {
+        try {
+            $managerId = Crypt::decrypt($encodedManagerId);
+            $clubId = Crypt::decrypt($encodedClubId);
+
+            ClubManager::where('club_id', $clubId)
+                ->findOrFail($managerId)
+                ->delete();
+
+            return json_encode(["msg" => "Manager removed.", "color" => "success", "icon" => "check-circle"]);
         }
         catch (\Throwable $th) {
             return abort(401);

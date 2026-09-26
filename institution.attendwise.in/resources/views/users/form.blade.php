@@ -8,7 +8,7 @@
             <p class="text-muted small mb-0">Manage administrative account credentials, assign RBAC user groups, and control activation status.</p>
         </div>
         <div>
-            <a href="{{ route('institution.admin.users.manage') }}" class="btn btn-light border">
+            <a href="{{ route('institution.admin.user.manage') }}" class="btn btn-light border">
                 <i class="fa fa-arrow-left me-1.5 opacity-75"></i> Back to Users
             </a>
         </div>

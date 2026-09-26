@@ -8,7 +8,7 @@
             <p class="text-muted small mb-0">Configure institutional metadata, accreditation parameters, contacts, integrations, and billing settings.</p>
         </div>
         <div>
-            <a href="{{ route('institution.dashboard') }}" class="btn btn-light border">
+            <a href="{{ route('dashboard_view') }}" class="btn btn-light border">
                 <i class="fa fa-arrow-left me-1.5 opacity-75"></i> Dashboard
             </a>
         </div>

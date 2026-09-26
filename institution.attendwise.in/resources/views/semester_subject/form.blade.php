@@ -8,7 +8,7 @@
             <p class="text-muted small mb-0">Map subjects to specific department, course, and semester academic cycles.</p>
         </div>
         <div>
-            <a href="{{ route('institution.semester_subject.manage') }}" class="btn btn-light border">
+            <a href="{{ route('institution.subject.manage.mapping.index') }}" class="btn btn-light border">
                 <i class="fa fa-arrow-left me-1.5 opacity-75"></i> Back to Mapping
             </a>
         </div>

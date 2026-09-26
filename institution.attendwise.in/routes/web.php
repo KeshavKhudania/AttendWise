@@ -238,6 +238,9 @@ Route::middleware(CheckLogin::class)->group(function () {
                         Route::post("club/members/add/{id}", "addMember")->name("institution.club.manage.members.add");
                         Route::post("club/members/update/{club_id}/{member_id}", "updateMember")->name("institution.club.manage.members.update");
                         Route::post("club/members/remove/{club_id}/{member_id}", "removeMember")->name("institution.club.manage.members.remove");
+                        
+                        Route::post("club/managers/add/{id}", "addManager")->name("institution.club.manage.managers.add");
+                        Route::post("club/managers/remove/{club_id}/{manager_id}", "removeManager")->name("institution.club.manage.managers.remove");
                     }
                     );
 

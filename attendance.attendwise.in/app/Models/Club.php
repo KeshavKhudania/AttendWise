@@ -13,6 +13,11 @@ class Club extends Model
     protected $table = 'institution_clubs';
     protected $guarded = ['id'];
 
+    public function managers()
+    {
+        return $this->hasMany(ClubManager::class);
+    }
+
     public function institution()
     {
         return $this->belongsTo(Institution::class);

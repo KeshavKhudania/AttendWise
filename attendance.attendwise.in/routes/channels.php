@@ -16,10 +16,14 @@ Broadcast::channel('attendance.session.{uuid}', function ($user, $uuid) {
         }
     } elseif (get_class($user) === \App\Models\Student::class) {
         return ['id' => 'student_'.$user->id, 'name' => $user->name, 'roll_number' => $user->roll_number, 'type' => 'student'];
+    } elseif (get_class($user) === \App\Models\ClubManager::class) {
+        if ($session->club_id === $user->club_id) {
+            return ['id' => 'club_'.$user->id, 'name' => $user->name, 'type' => 'club'];
+        }
     }
     
     return false;
-}, ['guards' => ['faculty', 'student']]);
+}, ['guards' => ['faculty', 'student', 'club']]);
 
 Broadcast::channel('club.{clubId}', function ($user, $clubId) {
     if (get_class($user) !== \App\Models\Student::class) return false;

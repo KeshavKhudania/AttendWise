@@ -8,7 +8,7 @@
             <p class="text-muted small mb-0">Configure physical classroom details, seating capacity, block affiliation, and geospatial coordinates.</p>
         </div>
         <div>
-            <a href="{{ route('institution.classroom.manage') }}" class="btn btn-light border">
+            <a href="{{ route('institution.class.room.manage') }}" class="btn btn-light border">
                 <i class="fa fa-arrow-left me-1.5 opacity-75"></i> Back to Classrooms
             </a>
         </div>

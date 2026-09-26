@@ -18,11 +18,17 @@ return Application::configure(basePath: dirname(__DIR__))
                 if ($request->is('faculty*')) {
                     return route('faculty.login');
                 }
+                if ($request->is('club*')) {
+                    return route('club.login');
+                }
                 return route('student.login');
             },
             users: function (\Illuminate\Http\Request $request) {
                 if ($request->is('faculty*')) {
                     return route('faculty.dashboard');
+                }
+                if ($request->is('club*')) {
+                    return route('club.dashboard');
                 }
                 return route('student.dashboard');
             }
@@ -34,18 +40,29 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'auth' => \Illuminate\Auth\Middleware\Authenticate::class,
+            'club.role' => \App\Http\Middleware\CheckClubRole::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->render(function (\Illuminate\Auth\AuthenticationException $e, \Illuminate\Http\Request $request) {
             if ($request->expectsJson()) {
-                $loginUrl = $request->is('faculty*') ? route('faculty.login') : route('student.login');
+                $loginUrl = route('student.login');
+                if ($request->is('faculty*')) {
+                    $loginUrl = route('faculty.login');
+                } elseif ($request->is('club*')) {
+                    $loginUrl = route('club.login');
+                }
                 return response()->json(['message' => 'Session expired. Please login again.', 'redirect' => $loginUrl], 401);
             }
         });
 
         $exceptions->render(function (\Illuminate\Session\TokenMismatchException $e, \Illuminate\Http\Request $request) {
-            $loginUrl = $request->is('faculty*') ? route('faculty.login') : route('student.login');
+            $loginUrl = route('student.login');
+            if ($request->is('faculty*')) {
+                $loginUrl = route('faculty.login');
+            } elseif ($request->is('club*')) {
+                $loginUrl = route('club.login');
+            }
             if ($request->expectsJson()) {
                 return response()->json(['message' => 'Session expired. Please login again.', 'redirect' => $loginUrl], 419);
             }
