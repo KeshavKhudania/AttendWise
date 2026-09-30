@@ -59,13 +59,7 @@ Route::prefix('student')->name('student.')->group(function () {
         Route::get('face-register', [StudentPwaController::class, 'faceRegisterView'])->name('face_register');
         Route::post('face-register', [StudentPwaController::class, 'storeFaceDescriptor'])->name('face_register.store');
 
-        // Club & Event Attendance Management
-        Route::get('club', [StudentPwaController::class, 'clubIndex'])->name('club.index');
-        Route::get('club/session/{club_id}', [StudentPwaController::class, 'clubSession'])->name('club.session');
-        Route::post('club/qr/init', [StudentPwaController::class, 'clubQrInit'])->name('club.qr.init');
-        Route::post('club/qr/refresh', [StudentPwaController::class, 'clubQrRefresh'])->name('club.qr.refresh');
-        Route::post('club/qr/close', [StudentPwaController::class, 'clubQrClose'])->name('club.qr.close');
-        Route::get('club/qr/students', [StudentPwaController::class, 'getClubSessionStudents'])->name('club.qr.students');
+        // Club & Event Attendance Management (Student Submitting)
         Route::post('club/attendance/submit', [StudentPwaController::class, 'clubSubmitAttendance'])->name('club.attendance.submit');
         Route::post('club/attendance/geo', [StudentPwaController::class, 'clubGeoMark'])->name('club.attendance.geo');
         Route::get('club/attendance-session/{uuid}', [StudentPwaController::class, 'clubLiveAttendanceView'])->name('club.attendance.live');
@@ -103,6 +97,9 @@ Route::prefix('club')->name('club.')->group(function () {
         Route::get('locations/search', [ClubDashboardController::class, 'searchLocations'])->name('locations.search');
         
         Route::get('attendance', [ClubDashboardController::class, 'attendance'])->name('attendance');
+        Route::get('attendance/geo', [ClubDashboardController::class, 'geoAttendance'])->name('attendance.geo');
+        Route::post('attendance/geo/start', [ClubDashboardController::class, 'geoAttendanceStart'])->name('attendance.geo.start');
+        Route::get('attendance/geo-session/{session_id}', [ClubDashboardController::class, 'geoAttendanceSession'])->name('attendance.geo.session');
         Route::get('attendance/event/{event_id}/init', [ClubDashboardController::class, 'attendanceInitEvent'])->name('attendance.init_event');
         Route::post('attendance/adhoc/start', [ClubDashboardController::class, 'attendanceStartAdhoc'])->name('attendance.start_adhoc');
         Route::get('attendance/session/{session_id}', [ClubDashboardController::class, 'attendanceManage'])->name('attendance.manage');

@@ -25,17 +25,23 @@ class ClubLoginController extends Controller
 
         $remember = $request->has('remember');
 
+        // First attempt standard club manager login (e.g. for the club admin)
         if (Auth::guard('club')->attempt($credentials, $remember)) {
             $manager = Auth::guard('club')->user();
             
+            if ($manager->role === 'admin') {
+                $request->session()->regenerate();
+                return redirect()->intended(route('club.dashboard'));
+            }
+
             // Check if this member has a user group assigned
+            $hasGroup = false;
+
             $student = \App\Models\Student::where('email', $manager->email)
                 ->orWhere('roll_number', str_replace('@student.attendwise.in', '', $manager->email))
                 ->first();
             
             $faculty = \App\Models\Faculty::where('email', $manager->email)->first();
-
-            $hasGroup = false;
 
             if ($student) {
                 $member = \App\Models\ClubMember::where('club_id', $manager->club_id)
@@ -63,7 +69,7 @@ class ClubLoginController extends Controller
                 $request->session()->regenerateToken();
 
                 return back()->withErrors([
-                    'email' => 'Not Authorized',
+                    'email' => 'Not Authorized. You do not have a user group assigned.',
                 ])->onlyInput('email');
             }
 
@@ -71,8 +77,67 @@ class ClubLoginController extends Controller
             return redirect()->intended(route('club.dashboard'));
         }
 
+        // If standard attempt fails, check if they are a student
+        $student = \App\Models\Student::where('email', $credentials['email'])->first();
+        if ($student && \Illuminate\Support\Facades\Hash::check($credentials['password'], $student->password)) {
+            $member = \App\Models\ClubMember::where('member_type', 'student')
+                ->where('member_id', $student->id)
+                ->whereNotNull('club_user_group_id')
+                ->first();
+                
+            if ($member) {
+                $manager = \App\Models\ClubManager::firstOrCreate(
+                    ['email' => $student->email],
+                    [
+                        'club_id' => $member->club_id,
+                        'name' => $student->name,
+                        'password' => \Illuminate\Support\Facades\Hash::make(\Illuminate\Support\Str::random(16)),
+                        'role' => 'member_manager' // default fallback role
+                    ]
+                );
+                
+                // If they exist but club_id differs (e.g. moved clubs), update it
+                if ($manager->club_id !== $member->club_id) {
+                    $manager->update(['club_id' => $member->club_id]);
+                }
+
+                Auth::guard('club')->login($manager, $remember);
+                $request->session()->regenerate();
+                return redirect()->intended(route('club.dashboard'));
+            }
+        }
+
+        // Check if they are a faculty
+        $faculty = \App\Models\Faculty::where('email', $credentials['email'])->first();
+        if ($faculty && \Illuminate\Support\Facades\Hash::check($credentials['password'], $faculty->password)) {
+            $member = \App\Models\ClubMember::where('member_type', 'faculty')
+                ->where('member_id', $faculty->id)
+                ->whereNotNull('club_user_group_id')
+                ->first();
+                
+            if ($member) {
+                $manager = \App\Models\ClubManager::firstOrCreate(
+                    ['email' => $faculty->email],
+                    [
+                        'club_id' => $member->club_id,
+                        'name' => $faculty->name,
+                        'password' => \Illuminate\Support\Facades\Hash::make(\Illuminate\Support\Str::random(16)),
+                        'role' => 'member_manager'
+                    ]
+                );
+                
+                if ($manager->club_id !== $member->club_id) {
+                    $manager->update(['club_id' => $member->club_id]);
+                }
+
+                Auth::guard('club')->login($manager, $remember);
+                $request->session()->regenerate();
+                return redirect()->intended(route('club.dashboard'));
+            }
+        }
+
         return back()->withErrors([
-            'email' => 'The provided credentials do not match our records.',
+            'email' => 'The provided credentials do not match our records or you are not authorized.',
         ])->onlyInput('email');
     }
 

@@ -24,6 +24,11 @@ class AttendanceSession extends Model
         'latitude',
         'longitude',
         'venue',
+        'geo_locations',
+    ];
+
+    protected $casts = [
+        'geo_locations' => 'array',
     ];
 
     protected static function boot()
@@ -40,4 +45,5 @@ class AttendanceSession extends Model
     public function faculty() { return $this->belongsTo(Faculty::class, 'faculty_id'); }
     public function records() { return $this->hasMany(AttendanceRecord::class, 'attendance_session_id'); }
     public function club() { return $this->belongsTo(Club::class, 'club_id'); }
+    public function event() { return $this->belongsTo(ClubEvent::class, 'event_id'); }
 }

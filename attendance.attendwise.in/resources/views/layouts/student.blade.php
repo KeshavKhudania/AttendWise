@@ -67,6 +67,11 @@
             padding-bottom: calc(var(--nav-height) + 20px);
         }
 
+        @if(request()->has('iframe'))
+        .app-topbar, .pwa-navbar, #pwaInstallBanner { display: none !important; }
+        body { padding: 0 !important; }
+        @endif
+
         /* Top Bar Header */
         .app-topbar {
             position: sticky;
@@ -492,27 +497,26 @@
                         ->where('date', $today)
                         ->where('status', 'active')
                         ->where('is_geofencing', 1)
-                        ->where('started_by_student_id', '!=', $studentId)
                         ->with('club')
                         ->whereDoesntHave('records', function($q) use ($studentId) {
                             $q->where('student_id', $studentId);
                         })
-                        ->get();
+                        ->orderBy('created_at', 'desc')
+                        ->get()
+                        ->unique('club_id');
                 }
             @endphp
             
             // Show persistent toasts for existing unmarked active sessions
             @foreach($activeUnmarkedSessions as $session)
-                showClickableToast(`Geo attendance active for {{ $session->club->name ?? 'Club' }}. Click to mark!`, 'success', "{{ route('student.club.attendance.live', ['uuid' => $session->uuid]) }}", "{{ $session->uuid }}");
+                showClickableToast('', 'success', "{{ route('student.club.attendance.live', ['uuid' => $session->uuid]) }}", "{{ $session->uuid }}", "{{ addslashes($session->club->name ?? 'Club') }}");
             @endforeach
 
             if (window.Echo) {
                 @foreach($myClubIds as $cId)
                     window.Echo.private('club.{{ $cId }}')
                         .listen('.ClubGeoSessionStarted', (e) => {
-                            if (e.startedBy != {{ auth('student')->id() }}) {
-                                showClickableToast(`Geo attendance started for ${e.clubName}. Click to mark!`, 'success', `/student/club/attendance-session/${e.uuid}`, e.uuid);
-                            }
+                            showClickableToast('', 'success', `/student/club/attendance-session/${e.uuid}`, e.uuid, e.clubName);
                         })
                         .listen('.ClubGeoSessionClosed', (e) => {
                             removeToast(e.uuid);
@@ -521,7 +525,7 @@
             }
         });
         
-        function showClickableToast(message, type = 'success', url = '#', sessionUuid = null) {
+        function showClickableToast(message, type = 'success', url = '#', sessionUuid = null, clubName = null) {
             const container = document.getElementById('toastContainer');
             // Prevent duplicate toasts for the same session
             if (sessionUuid && document.getElementById(`toast-${sessionUuid}`)) return;
@@ -530,9 +534,77 @@
             toast.className = `toast-msg toast-${type}`;
             if (sessionUuid) toast.id = `toast-${sessionUuid}`;
             toast.style.cursor = 'pointer';
-            toast.onclick = () => window.location.href = url;
-            const icon = type === 'success' ? 'fa-circle-check' : 'fa-circle-exclamation';
-            toast.innerHTML = `<i class="fa-solid ${icon}" style="font-size: 1.2rem;"></i> <span>${message}</span>`;
+            
+            toast.onclick = () => {
+                const rect = toast.getBoundingClientRect();
+                toast.style.opacity = '0';
+                
+                const clone = document.createElement('div');
+                clone.style.position = 'fixed';
+                clone.style.top = rect.top + 'px';
+                clone.style.left = rect.left + 'px';
+                clone.style.width = rect.width + 'px';
+                clone.style.height = rect.height + 'px';
+                clone.style.margin = '0';
+                clone.style.padding = '0';
+                clone.style.background = 'var(--bg-dark)';
+                clone.style.borderRadius = '16px';
+                clone.style.zIndex = '999999';
+                clone.style.transition = 'all 0.5s cubic-bezier(0.25, 1, 0.5, 1)';
+                clone.style.display = 'flex';
+                clone.style.alignItems = 'center';
+                clone.style.justifyContent = 'center';
+                clone.style.overflow = 'hidden';
+                clone.style.boxShadow = '0 10px 30px rgba(0,0,0,0.5)';
+                document.body.appendChild(clone);
+                
+                // Force reflow
+                void clone.offsetWidth;
+                
+                // Animate to full screen
+                clone.style.top = '0';
+                clone.style.left = '0';
+                clone.style.width = '100vw';
+                clone.style.height = '100vh';
+                clone.style.borderRadius = '0';
+                clone.style.boxShadow = 'none';
+                
+                // fade out original content in clone
+                const inner = clone.firstElementChild;
+                if (inner) {
+                    inner.style.transition = 'opacity 0.2s ease';
+                    inner.style.opacity = '0';
+                }
+                
+                // Load iframe after animation
+                setTimeout(() => {
+                    clone.innerHTML = `<iframe src="${url}?iframe=1" style="width: 100%; height: 100%; border: none; outline: none; background: transparent;"></iframe>`;
+                }, 400);
+            };
+            
+            if (clubName) {
+                toast.style.padding = '12px';
+                toast.style.background = 'rgba(15, 23, 42, 0.85)';
+                toast.style.border = '1px solid rgba(255,255,255,0.1)';
+                toast.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 14px; width: 100%;">
+                        <div style="width: 48px; height: 48px; border-radius: 14px; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4); flex-shrink: 0;">
+                            <i class="fa-solid fa-satellite-dish" style="color: white; font-size: 1.4rem; animation: pulse 2s infinite;"></i>
+                        </div>
+                        <div style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
+                            <span style="font-size: 0.75rem; color: #93c5fd; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Live Geo-Session</span>
+                            <span style="font-size: 1rem; font-weight: 800; color: #ffffff;">${clubName}</span>
+                        </div>
+                        <div style="background: rgba(255,255,255,0.15); padding: 8px 14px; border-radius: 12px; font-size: 0.85rem; font-weight: 700; color: white; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
+                            Join <i class="fa-solid fa-arrow-right"></i>
+                        </div>
+                    </div>
+                `;
+            } else {
+                const icon = type === 'success' ? 'fa-circle-check' : 'fa-circle-exclamation';
+                toast.innerHTML = `<i class="fa-solid ${icon}" style="font-size: 1.2rem;"></i> <span>${message}</span>`;
+            }
+            
             container.appendChild(toast);
 
             setTimeout(() => toast.classList.add('show'), 50);

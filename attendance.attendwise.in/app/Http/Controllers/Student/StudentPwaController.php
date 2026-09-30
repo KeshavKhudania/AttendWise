@@ -512,194 +512,7 @@ class StudentPwaController extends Controller
         return response()->json(['success' => true, 'message' => 'Face registered successfully!']);
     }
 
-    public function clubIndex()
-    {
-        $student = Auth::guard('student')->user();
-        $student->load(['clubMemberships' => function($q) {
-            $q->where('can_take_attendance', 1)->with('club');
-        }]);
 
-        if ($student->clubMemberships->isEmpty()) {
-            return redirect()->route('student.dashboard')->with('error', 'Unauthorized access.');
-        }
-
-        return view('student.club.index', compact('student'));
-    }
-
-    public function clubSession($club_id)
-    {
-        $student = Auth::guard('student')->user();
-        $membership = \App\Models\ClubMember::where('club_id', $club_id)
-            ->where('member_id', $student->id)
-            ->where('member_type', 'student')
-            ->where('can_take_attendance', 1)
-            ->with('club')
-            ->firstOrFail();
-
-        $club = $membership->club;
-
-        $existingSession = AttendanceSession::where('club_id', $club->id)
-            ->where('date', Carbon::today()->format('Y-m-d'))
-            ->where('status', 'active')
-            ->first();
-
-        $existingRecords = collect();
-        if ($existingSession) {
-            $existingRecords = AttendanceRecord::where('attendance_session_id', $existingSession->id)
-                ->get()
-                ->pluck('status', 'student_id');
-        }
-
-        $clubMembers = \App\Models\ClubMember::with('member')->where('club_id', $club->id)->get();
-
-        $dayOfWeek = Carbon::now()->format('l');
-        $periods = \App\Models\Schedule::where('institution_id', $student->institution_id)
-            ->where('day_of_week', $dayOfWeek)
-            ->select('start_time', 'end_time')
-            ->distinct()
-            ->orderBy('start_time')
-            ->get();
-
-        $blocks = \App\Models\Block::where('institution_id', $student->institution_id)
-            ->where(function($q) { $q->whereNull('status')->orWhere('status', 1)->orWhere('status', 'active'); })
-            ->orderBy('name')
-            ->get(['id', 'name', 'latitude', 'longitude', 'radius']);
-
-        $venues = \App\Models\Venue::where('institution_id', $student->institution_id)
-            ->where(function($q) { $q->whereNull('status')->orWhere('status', 1)->orWhere('status', 'active'); })
-            ->orderBy('name')
-            ->get(['id', 'name', 'type', 'latitude', 'longitude', 'radius', 'description']);
-
-        $classrooms = \App\Models\Classroom::where('institution_id', $student->institution_id)
-            ->where(function($q) { $q->whereNull('status')->orWhere('status', 1)->orWhere('status', 'active'); })
-            ->with('block:id,name')
-            ->orderBy('name')
-            ->get(['id', 'block_id', 'name', 'floor_number', 'latitude', 'longitude']);
-
-        return view('student.club.qr', compact('student', 'club', 'existingSession', 'existingRecords', 'clubMembers', 'periods', 'blocks', 'venues', 'classrooms'));
-    }
-
-    public function clubQrInit(Request $request)
-    {
-        $student = Auth::guard('student')->user();
-        $clubId = $request->club_id;
-        
-        $membership = \App\Models\ClubMember::where('club_id', $clubId)
-            ->where('member_id', $student->id)
-            ->where('member_type', 'student')
-            ->where('can_take_attendance', 1)
-            ->with('club')
-            ->firstOrFail();
-
-        $status = $request->status ?? 'active';
-
-        $session = AttendanceSession::updateOrCreate(
-            [
-                'institution_id' => $student->institution_id,
-                'club_id' => $clubId,
-                'date' => Carbon::today()->format('Y-m-d'),
-                'status' => $status
-            ],
-            [
-                'started_by_student_id' => $student->id,
-                'start_time' => $request->event_start ?? Carbon::now()->format('H:i:s'),
-                'end_time' => $request->event_end ?? Carbon::now()->addHours(1)->format('H:i:s'),
-                'is_geofencing' => $request->is_geofencing ?? 0,
-                'latitude' => $request->latitude,
-                'longitude' => $request->longitude,
-                'venue' => $request->venue,
-            ]
-        );
-
-        if ($session->is_geofencing == 1) {
-            try {
-                event(new \App\Events\ClubGeoSessionStarted(
-                    $clubId,
-                    $session->uuid,
-                    $membership->club->name ?? 'Club Activity',
-                    $session->venue,
-                    $student->id
-                ));
-            } catch (\Exception $e) {
-                \Illuminate\Support\Facades\Log::warning('Failed to broadcast geo session start: ' . $e->getMessage());
-            }
-        }
-
-        return response()->json([
-            'success' => true,
-            'uuid' => $session->uuid,
-            'session_id' => $session->id
-        ]);
-    }
-
-    public function clubQrRefresh(Request $request)
-    {
-        $student = Auth::guard('student')->user();
-        $sessionUuid = $request->uuid;
-        
-        $session = AttendanceSession::where('uuid', $sessionUuid)
-            ->where('started_by_student_id', $student->id)
-            ->firstOrFail();
-        
-        $timestamp = now()->timestamp;
-        $payload = $sessionUuid . '|' . $timestamp;
-        
-        $session->update(['qr_refresh_token' => $timestamp]);
-        
-        return response()->json([
-            'success' => true,
-            'payload' => $payload
-        ]);
-    }
-
-    public function getClubSessionStudents(Request $request)
-    {
-        $student = Auth::guard('student')->user();
-        $sessionUuid = $request->uuid;
-        $session = AttendanceSession::where('uuid', $sessionUuid)
-            ->where('started_by_student_id', $student->id)
-            ->firstOrFail();
-        
-        $records = AttendanceRecord::where('attendance_session_id', $session->id)
-            ->where('status', 'present')
-            ->with('student')
-            ->get();
-            
-        return response()->json([
-            'success' => true,
-            'present_student_ids' => $records->pluck('student_id')->toArray(),
-            'students' => $records->map(function($record) {
-                return [
-                    'id' => $record->student->id ?? '',
-                    'name' => $record->student->name ?? 'Unknown',
-                    'roll_number' => $record->student->roll_number ?? '',
-                ];
-            })->toArray()
-        ]);
-    }
-
-    public function clubQrClose(Request $request)
-    {
-        $student = Auth::guard('student')->user();
-        $sessionUuid = $request->uuid;
-        
-        $session = AttendanceSession::where('uuid', $sessionUuid)
-            ->where('started_by_student_id', $student->id)
-            ->firstOrFail();
-            
-        $session->update(['status' => 'completed', 'end_time' => Carbon::now()->format('H:i:s')]);
-        
-        try {
-            event(new \App\Events\LiveAttendanceAction($session->uuid, 'session_ended', []));
-            if ($session->is_geofencing == 1) {
-                event(new \App\Events\ClubGeoSessionClosed($session->club_id, $session->uuid));
-            }
-        } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::warning('WebSocket broadcast failed: ' . $e->getMessage());
-        }
-        
-        return response()->json(['success' => true]);
-    }
 
     public function clubSubmitAttendance(Request $request)
     {
@@ -816,30 +629,49 @@ class StudentPwaController extends Controller
             return response()->json(['success' => false, 'message' => 'GPS coordinates are required.']);
         }
 
-        if ($session->latitude && $session->longitude) {
-            $earthRadius = 6371000; 
+        $allowedRadius = 30; 
+        $earthRadius = 6371000;
+        $latTo = deg2rad($request->latitude);
+        $lonTo = deg2rad($request->longitude);
+        $minDistance = null;
+
+        if (!empty($session->geo_locations) && is_array($session->geo_locations)) {
+            foreach ($session->geo_locations as $loc) {
+                if (isset($loc['lat']) && isset($loc['lng'])) {
+                    $latFrom = deg2rad($loc['lat']);
+                    $lonFrom = deg2rad($loc['lng']);
+                    $latDelta = $latTo - $latFrom;
+                    $lonDelta = $lonTo - $lonFrom;
+                    $a = sin($latDelta / 2) * sin($latDelta / 2) + cos($latFrom) * cos($latTo) * sin($lonDelta / 2) * sin($lonDelta / 2);
+                    $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+                    $distance = $earthRadius * $c;
+                    if ($minDistance === null || $distance < $minDistance) {
+                        $minDistance = $distance;
+                    }
+                }
+            }
+        } elseif ($session->latitude && $session->longitude) {
             $latFrom = deg2rad($session->latitude);
             $lonFrom = deg2rad($session->longitude);
-            $latTo = deg2rad($request->latitude);
-            $lonTo = deg2rad($request->longitude);
-
             $latDelta = $latTo - $latFrom;
             $lonDelta = $lonTo - $lonFrom;
-
-            $a = sin($latDelta / 2) * sin($latDelta / 2) +
-                 cos($latFrom) * cos($latTo) *
-                 sin($lonDelta / 2) * sin($lonDelta / 2);
+            $a = sin($latDelta / 2) * sin($latDelta / 2) + cos($latFrom) * cos($latTo) * sin($lonDelta / 2) * sin($lonDelta / 2);
             $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
-            $distance = $earthRadius * $c;
+            $minDistance = $earthRadius * $c;
+        }
 
-            $allowedRadius = 30; 
+        if ($minDistance === null) {
+            return response()->json([
+                'success' => false,
+                'message' => 'The session location has not been configured by the manager yet.'
+            ]);
+        }
 
-            if ($distance > $allowedRadius) {
-                return response()->json([
-                    'success' => false, 
-                    'message' => 'You are ' . round($distance) . ' meters away. You must be within ' . $allowedRadius . ' meters.'
-                ]);
-            }
+        if ($minDistance > $allowedRadius) {
+            return response()->json([
+                'success' => false, 
+                'message' => 'You are ' . round($minDistance) . ' meters away from the nearest allowed location. You must be within ' . $allowedRadius . ' meters.'
+            ]);
         }
 
         DB::beginTransaction();
@@ -903,7 +735,7 @@ class StudentPwaController extends Controller
     {
         $student = Auth::guard('student')->user();
         
-        $session = AttendanceSession::with('club')
+        $session = AttendanceSession::with(['club', 'event'])
             ->where('uuid', $uuid)
             ->where('is_geofencing', 1)
             ->firstOrFail();

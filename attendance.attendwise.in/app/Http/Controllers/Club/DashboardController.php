@@ -317,27 +317,69 @@ class DashboardController extends Controller
             $classrooms->where('name', 'LIKE', "%{$query}%");
         }
 
-        $vRes = $venues->get()->map(function($item) {
+        $getCenter = function($item) {
+            if ($item->latitude && $item->longitude) {
+                return ['lat' => $item->latitude, 'lng' => $item->longitude];
+            }
+            if (!empty($item->latlng)) {
+                $polygonStr = null;
+                try {
+                    $rawPayload = decrypt($item->latlng, false);
+                    $unserialized = @unserialize($rawPayload);
+                    $polygonStr = ($unserialized !== false) ? $unserialized : $rawPayload;
+                } catch (\Exception $e) {}
+
+                if ($polygonStr) {
+                    try {
+                        $polygon = json_decode($polygonStr, true);
+                        if (is_array($polygon) && count($polygon) > 0) {
+                            $latSum = 0;
+                            $lngSum = 0;
+                            foreach ($polygon as $point) {
+                                $latSum += $point[0];
+                                $lngSum += $point[1];
+                            }
+                            return [
+                                'lat' => $latSum / count($polygon),
+                                'lng' => $lngSum / count($polygon)
+                            ];
+                        }
+                    } catch (\Exception $e) {}
+                }
+            }
+            return ['lat' => null, 'lng' => null];
+        };
+
+        $vRes = $venues->get()->map(function($item) use ($getCenter) {
+            $center = $getCenter($item);
             return (object)[
                 'id' => 'venue_' . $item->id,
                 'text' => $item->name . ' (' . $item->type . ')',
-                'group' => 'Other Venues'
+                'group' => 'Other Venues',
+                'latitude' => $center['lat'],
+                'longitude' => $center['lng']
             ];
         });
 
-        $bRes = $blocks->get()->map(function($item) {
+        $bRes = $blocks->get()->map(function($item) use ($getCenter) {
+            $center = $getCenter($item);
             return (object)[
                 'id' => 'block_' . $item->id,
                 'text' => $item->name,
-                'group' => 'Blocks'
+                'group' => 'Blocks',
+                'latitude' => $center['lat'],
+                'longitude' => $center['lng']
             ];
         });
 
-        $cRes = $classrooms->get()->map(function($item) {
+        $cRes = $classrooms->get()->map(function($item) use ($getCenter) {
+            $center = $getCenter($item);
             return (object)[
                 'id' => 'classroom_' . $item->id,
                 'text' => $item->name . ' (Capacity: ' . $item->capacity . ')',
-                'group' => 'Classrooms'
+                'group' => 'Classrooms',
+                'latitude' => $center['lat'],
+                'longitude' => $center['lng']
             ];
         });
 
@@ -385,6 +427,70 @@ class DashboardController extends Controller
         return view('club.attendance', compact('manager', 'club', 'events', 'adhoc_sessions'));
     }
 
+    public function geoAttendance(Request $request)
+    {
+        $manager = Auth::guard('club')->user();
+        if ($manager->role !== 'admin' && !$manager->hasPermission('attendance.take') && !$manager->hasPermission('attendance.view')) {
+            abort(403, 'Unauthorized. You do not have permission to access attendance.');
+        }
+        $club = $manager->club;
+        
+        $query = \App\Models\AttendanceSession::where('club_id', $club->id)
+            ->where('is_geofencing', 1)
+            ->orderBy('date', 'desc')
+            ->orderBy('start_time', 'desc');
+            
+        if ($request->has('from_date') && $request->from_date) {
+            $query->where('date', '>=', $request->from_date);
+        }
+        if ($request->has('to_date') && $request->to_date) {
+            $query->where('date', '<=', $request->to_date);
+        }
+            
+        $geo_sessions = $query->get();
+            
+        return view('club.geo_attendance', compact('manager', 'club', 'geo_sessions'));
+    }
+
+    public function geoAttendanceStart(Request $request)
+    {
+        $manager = Auth::guard('club')->user();
+        if ($manager->role !== 'admin' && !$manager->hasPermission('attendance.take')) {
+            abort(403, 'Unauthorized');
+        }
+        
+        $club = $manager->club;
+        
+        $session = \App\Models\AttendanceSession::create([
+            'institution_id' => $club->institution_id,
+            'club_id' => $club->id,
+            'date' => now()->toDateString(),
+            'start_time' => now()->toTimeString(),
+            'end_time' => now()->addHours(2)->toTimeString(),
+            'status' => 'active',
+            'is_geofencing' => 1
+        ]);
+        
+        return redirect()->route('club.attendance.geo.session', ['session_id' => $session->id]);
+    }
+
+    public function geoAttendanceSession($session_id)
+    {
+        $manager = Auth::guard('club')->user();
+        if ($manager->role !== 'admin' && !$manager->hasPermission('attendance.take') && !$manager->hasPermission('attendance.view')) {
+            abort(403, 'Unauthorized');
+        }
+        
+        $club = $manager->club;
+        $session = \App\Models\AttendanceSession::where('club_id', $club->id)->findOrFail($session_id);
+        $event = $session->event_id ? \App\Models\ClubEvent::find($session->event_id) : null;
+        
+        $records = $session->records()->pluck('student_id')->toArray();
+        $members = $club->members()->where('member_type', 'student')->with('student')->get();
+        
+        return view('club.attendance_geo_session', compact('manager', 'club', 'event', 'session', 'records', 'members'));
+    }
+
     public function attendanceInitEvent(Request $request, $event_id)
     {
         $manager = Auth::guard('club')->user();
@@ -406,7 +512,10 @@ class DashboardController extends Controller
             ]
         );
         
-        $method = $request->query('method');
+        $method = $request->query('method', $request->input('method'));
+        if ($method === 'geo') {
+            return redirect()->route('club.attendance.geo.session', ['session_id' => $session->id]);
+        }
         return redirect()->route('club.attendance.manage', ['session_id' => $session->id, 'method' => $method]);
     }
     
@@ -429,7 +538,10 @@ class DashboardController extends Controller
             'is_geofencing' => 0
         ]);
         
-        $method = $request->input('method');
+        $method = $request->input('method', $request->query('method'));
+        if ($method === 'geo') {
+            return redirect()->route('club.attendance.geo.session', ['session_id' => $session->id]);
+        }
         return redirect()->route('club.attendance.manage', ['session_id' => $session->id, 'method' => $method]);
     }
 
@@ -520,7 +632,28 @@ class DashboardController extends Controller
             'is_geofencing' => $request->is_geofencing ? 1 : 0,
             'latitude' => $request->latitude,
             'longitude' => $request->longitude,
+            'geo_locations' => $request->geo_locations,
         ]);
+        
+        if ($session->is_geofencing) {
+            try {
+                event(new \App\Events\ClubGeoSessionStarted(
+                    $session->club_id,
+                    $session->uuid,
+                    $manager->club->name ?? 'Club Activity',
+                    $session->venue ?? 'Multiple Locations',
+                    $manager->id
+                ));
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::warning('Failed to broadcast geo session start: ' . $e->getMessage());
+            }
+        } else {
+            try {
+                event(new \App\Events\ClubGeoSessionClosed($session->club_id, $session->uuid));
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::warning('Failed to broadcast geo session closed: ' . $e->getMessage());
+            }
+        }
         
         return response()->json(['success' => true]);
     }

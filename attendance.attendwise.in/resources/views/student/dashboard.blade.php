@@ -103,18 +103,6 @@
     </div>
 </div>
 
-@if($student->clubMemberships->isNotEmpty())
-<!-- Club & Event Management Shortcut -->
-<div class="glass-card" style="margin-bottom: 16px; background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%); padding: 18px; border-radius: 16px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);">
-    <div>
-        <h4 style="font-weight: 800; font-size: 1.1rem; color: #ffffff; margin-bottom: 4px;">Club Management</h4>
-        <p style="color: #e0e7ff; font-size: 0.8rem; margin: 0;">You have authorized access to manage attendance for your clubs.</p>
-    </div>
-    <a href="{{ route('student.club.index') }}" style="background: #ffffff; color: #4f46e5; text-decoration: none; padding: 10px 16px; border-radius: 12px; font-weight: 700; font-size: 0.85rem; display: flex; align-items: center; gap: 6px; flex-shrink: 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-        <i class="fa-solid fa-users-gear"></i> Manage
-    </a>
-</div>
-@endif
 
 @if(isset($activeClubSessions) && $activeClubSessions->isNotEmpty())
 <!-- Active Club Sessions -->

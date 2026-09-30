@@ -576,7 +576,11 @@
     }
 
     function switchSessionMethod() {
-        window.location.href = "{{ route('club.attendance.manage', ['session_id' => $session->id]) }}?method=" + selectedMethod;
+        if (selectedMethod === 'geo') {
+            window.location.href = "{{ route('club.attendance.geo.session', ['session_id' => $session->id]) }}";
+        } else {
+            window.location.href = "{{ route('club.attendance.manage', ['session_id' => $session->id]) }}?method=" + selectedMethod;
+        }
     }
     
     document.getElementById('methodModal').addEventListener('click', function(e) {
