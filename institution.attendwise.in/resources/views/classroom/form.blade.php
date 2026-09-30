@@ -214,13 +214,13 @@
       row.className = 'row g-2 mb-2 latlng-row';
 
       row.innerHTML = `
-            <div class="col-md-5">
-                <input type="number" step="any" class="form-control lat" value="${lat}">
+            <div class="col-5 col-md-5">
+                <input type="number" step="any" class="form-control lat" value="${lat}" placeholder="Lat">
             </div>
-            <div class="col-md-5">
-                <input type="number" step="any" class="form-control lng" value="${lng}">
+            <div class="col-5 col-md-5">
+                <input type="number" step="any" class="form-control lng" value="${lng}" placeholder="Lng">
             </div>
-            <div class="col-md-2">
+            <div class="col-2 col-md-2">
                 <button type="button" class="btn btn-danger btn-sm w-100">×</button>
             </div>
         `;

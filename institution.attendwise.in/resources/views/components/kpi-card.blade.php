@@ -1,4 +1,4 @@
-<div class="col-6 col-lg-3">
+<div class="col-12 col-md-6 col-lg-3 mb-3 mb-lg-0">
   <div class="card border-0 shadow-sm">
     <div class="card-body p-3">
       <div class="d-flex align-items-center mb-3">
