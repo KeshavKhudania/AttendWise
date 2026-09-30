@@ -1,8 +1,32 @@
+<style>
+  @media (max-width: 991px) {
+    .navbar.default-layout {
+      flex-wrap: nowrap !important;
+      padding: 0 16px !important;
+    }
+    .navbar.default-layout .navbar-brand-wrapper {
+      width: auto !important;
+      padding-left: 0 !important;
+    }
+    .navbar.default-layout .navbar-menu-wrapper {
+      width: auto !important;
+      flex-grow: 1 !important;
+      justify-content: flex-end !important;
+      padding-right: 0 !important;
+    }
+  }
+</style>
 <div class="container-scroller">
 
-  <nav class="navbar default-layout col-lg-12 col-12 p-0 fixed-top d-flex align-items-top flex-row">
+  <nav class="navbar default-layout col-lg-12 col-12 p-0 fixed-top d-flex align-items-center flex-row">
     <!-- Brand Wrapper -->
     <div class="text-center navbar-brand-wrapper d-flex align-items-center justify-content-start">
+      <!-- Hamburger for mobile -->
+      <button class="navbar-toggler navbar-toggler-right d-lg-none align-self-center me-3" type="button"
+        onclick="document.querySelector('.sidebar-offcanvas').classList.toggle('active')" style="background:none;border:1px solid #E5E7EB;border-radius:8px;padding:6px 10px;">
+        <i class="fas fa-bars" style="font-size:14px;color:#6B7280;"></i>
+      </button>
+
       <button class="navbar-toggler-sidebar d-none d-lg-flex align-items-center justify-content-center me-2"
         onclick="document.body.classList.toggle('sidebar-icon-only')"
         style="background:none;border:1px solid #E5E7EB;border-radius:8px;width:32px;height:32px;cursor:pointer;color:#6B7280;flex-shrink:0;">
@@ -22,12 +46,6 @@
 
     <!-- Navbar menu wrapper -->
     <div class="navbar-menu-wrapper d-flex align-items-center">
-
-      <!-- Hamburger for mobile -->
-      <button class="navbar-toggler navbar-toggler-right d-lg-none align-self-center" type="button"
-        data-bs-toggle="offcanvas" style="background:none;border:1px solid #E5E7EB;border-radius:8px;padding:6px 10px;">
-        <i class="fas fa-bars" style="font-size:14px;color:#6B7280;"></i>
-      </button>
 
       <!-- Breadcrumb -->
       <div class="breadcrumb pb-0 border-0 me-auto d-none d-md-flex align-items-center" style="gap:4px;">
