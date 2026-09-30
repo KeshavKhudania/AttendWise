@@ -3,16 +3,33 @@
     .navbar.default-layout {
       flex-wrap: nowrap !important;
       padding: 0 16px !important;
+      height: 60px !important;
     }
     .navbar.default-layout .navbar-brand-wrapper {
       width: auto !important;
       padding-left: 0 !important;
+      height: auto !important;
     }
     .navbar.default-layout .navbar-menu-wrapper {
       width: auto !important;
       flex-grow: 1 !important;
       justify-content: flex-end !important;
       padding-right: 0 !important;
+    }
+    
+    .sidebar-offcanvas {
+      top: 60px !important;
+      max-height: calc(100vh - 60px) !important;
+      right: auto !important;
+      left: -250px !important;
+      width: 250px !important;
+      transition: left 0.25s ease-out !important;
+      box-shadow: 2px 0 8px rgba(0,0,0,0.1);
+      z-index: 1050 !important;
+      background: #fff !important;
+    }
+    .sidebar-offcanvas.active {
+      left: 0 !important;
     }
   }
 </style>
