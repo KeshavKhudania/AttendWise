@@ -323,12 +323,67 @@ class StudentPwaController extends Controller
             $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
             $distance = $earthRadius * $c;
 
-            $allowedRadius = 50; // 50 meters strict limit
+            $allowedRadius = 5; // 5 meters strict limit
 
             if ($distance > $allowedRadius) {
                 return response()->json([
                     'success' => false, 
                     'message' => 'You are ' . round($distance) . ' meters away from the classroom. You must be within ' . $allowedRadius . ' meters to mark attendance.'
+                ], 403);
+            }
+        }
+
+        // --- Geolocation Security Verification (Club) ---
+        if ($isClubSession && !$isDemoAccount && $session->is_geofencing) {
+            $studentLat = $validated['latitude'] ?? null;
+            $studentLng = $validated['longitude'] ?? null;
+
+            if (!$studentLat || !$studentLng) {
+                return response()->json([
+                    'success' => false, 
+                    'message' => 'GPS location is required for this session. Please enable location permissions.'
+                ], 403);
+            }
+
+            $allowedRadius = 5;
+            $earthRadius = 6371000;
+            $latTo = deg2rad($studentLat);
+            $lonTo = deg2rad($studentLng);
+            $minDistance = null;
+
+            if (!empty($session->geo_locations) && is_array($session->geo_locations)) {
+                foreach ($session->geo_locations as $loc) {
+                    if (isset($loc['lat']) && isset($loc['lng'])) {
+                        $latFrom = deg2rad($loc['lat']);
+                        $lonFrom = deg2rad($loc['lng']);
+                        $latDelta = $latTo - $latFrom;
+                        $lonDelta = $lonTo - $lonFrom;
+                        $a = sin($latDelta / 2) * sin($latDelta / 2) + cos($latFrom) * cos($latTo) * sin($lonDelta / 2) * sin($lonDelta / 2);
+                        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+                        $distance = $earthRadius * $c;
+                        if ($minDistance === null || $distance < $minDistance) {
+                            $minDistance = $distance;
+                        }
+                    }
+                }
+            } elseif ($session->latitude && $session->longitude) {
+                $latFrom = deg2rad($session->latitude);
+                $lonFrom = deg2rad($session->longitude);
+                $latDelta = $latTo - $latFrom;
+                $lonDelta = $lonTo - $lonFrom;
+                $a = sin($latDelta / 2) * sin($latDelta / 2) + cos($latFrom) * cos($latTo) * sin($lonDelta / 2) * sin($lonDelta / 2);
+                $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+                $minDistance = $earthRadius * $c;
+            }
+
+            if ($minDistance === null) {
+                return response()->json(['success' => false, 'message' => 'No active geo-locations are set for this club session. Ask the manager to set them.'], 403);
+            }
+
+            if ($minDistance > $allowedRadius) {
+                return response()->json([
+                    'success' => false, 
+                    'message' => 'You are ' . round($minDistance) . ' meters away from the venue. You must be within ' . $allowedRadius . ' meters to mark attendance.'
                 ], 403);
             }
         }
@@ -629,7 +684,7 @@ class StudentPwaController extends Controller
             return response()->json(['success' => false, 'message' => 'GPS coordinates are required.']);
         }
 
-        $allowedRadius = 30; 
+        $allowedRadius = 5;
         $earthRadius = 6371000;
         $latTo = deg2rad($request->latitude);
         $lonTo = deg2rad($request->longitude);

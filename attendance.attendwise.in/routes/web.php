@@ -95,6 +95,7 @@ Route::prefix('club')->name('club.')->group(function () {
         Route::post('events/{id}/update', [ClubDashboardController::class, 'updateEvent'])->name('events.update');
         Route::post('events/{id}/remove', [ClubDashboardController::class, 'removeEvent'])->name('events.remove');
         Route::get('locations/search', [ClubDashboardController::class, 'searchLocations'])->name('locations.search');
+        Route::get('schedules/search', [ClubDashboardController::class, 'searchSchedules'])->name('schedules.search');
         
         Route::get('attendance', [ClubDashboardController::class, 'attendance'])->name('attendance');
         Route::get('attendance/geo', [ClubDashboardController::class, 'geoAttendance'])->name('attendance.geo');

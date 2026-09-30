@@ -14,6 +14,39 @@
 
 @section('styles')
 <style>
+    .slot-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 0.5rem;
+        margin-top: 0.5rem;
+    }
+    
+    .slot-option {
+        border: 1px solid var(--border);
+        border-radius: 0.5rem;
+        padding: 0.5rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s ease-in-out;
+        background: var(--bg);
+        user-select: none;
+    }
+    
+    .slot-option:hover {
+        border-color: var(--text-main);
+    }
+    
+    .slot-option.selected {
+        background: var(--text-main);
+        color: var(--bg);
+        border-color: var(--text-main);
+    }
+    
+    .slot-option.selected .slot-time {
+        color: var(--bg) !important;
+        opacity: 0.9;
+    }
+
     .events-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -293,6 +326,19 @@
             </div>
         </div>
         
+        <div id="lectureSlotContainer" style="display: block; margin-top: 1.5rem; text-align: left;">
+            <label style="display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.5rem; text-transform: uppercase;">Link to Timing Slot (Optional)</label>
+            <div class="slot-grid">
+                @foreach($slot_timings as $index => $timing)
+                    <div class="slot-option" data-slot-id="{{ $index }}" onclick="toggleSlot(this)">
+                        <div style="font-weight: 600; font-size: 0.85rem;">Slot {{ $index }}</div>
+                        <div class="slot-time" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">{{ \Carbon\Carbon::parse($timing['start'])->format('h:i A') }} - {{ \Carbon\Carbon::parse($timing['end'])->format('h:i A') }}</div>
+                    </div>
+                @endforeach
+            </div>
+            <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem; line-height: 1.4;">If selected, attendance will be linked to this timing slot for later academic tracking.</p>
+        </div>
+        
         <div style="display: flex; gap: 1rem; margin-top: 2rem;">
             <button onclick="closeMethodModal()" style="flex: 1; padding: 0.75rem; border-radius: 0.75rem; border: 1px solid var(--border); background: transparent; color: var(--text-main); font-weight: 600; cursor: pointer;">Cancel</button>
             <button onclick="startSession()" style="flex: 1; padding: 0.75rem; border-radius: 0.75rem; border: none; background: var(--text-main); color: var(--bg); font-weight: 600; cursor: pointer;">Start Session</button>
@@ -302,6 +348,7 @@
         <form id="startSessionForm" method="POST" style="display: none;">
             @csrf
             <input type="hidden" name="method" id="selectedMethodInput" value="qr">
+            <!-- timing_slot_ids inputs will be dynamically appended here -->
         </form>
     </div>
 </div>
@@ -320,9 +367,17 @@
         document.getElementById('selectedMethodInput').value = method;
     }
 
+    function toggleSlot(element) {
+        element.classList.toggle('selected');
+    }
+
     function openMethodModal(url, type) {
         currentTargetUrl = url;
         currentMethodType = type;
+        
+        // Reset selections
+        document.querySelectorAll('.slot-option').forEach(el => el.classList.remove('selected'));
+        
         document.getElementById('methodModal').style.display = 'flex';
     }
 
@@ -331,12 +386,31 @@
     }
 
     function startSession() {
+        const scheduleVals = Array.from(document.querySelectorAll('.slot-option.selected')).map(el => el.getAttribute('data-slot-id'));
         if(currentMethodType === 'post') {
             const form = document.getElementById('startSessionForm');
+            
+            // Clear existing timing inputs
+            form.querySelectorAll('.timing-input').forEach(el => el.remove());
+            
+            // Append new timing inputs
+            scheduleVals.forEach(val => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'timing_slot_ids[]';
+                input.value = val;
+                input.classList.add('timing-input');
+                form.appendChild(input);
+            });
+            
             form.action = currentTargetUrl;
             form.submit();
         } else {
-            window.location.href = currentTargetUrl + '?method=' + selectedMethod;
+            let queryParams = '?method=' + selectedMethod;
+            scheduleVals.forEach(val => {
+                queryParams += '&timing_slot_ids[]=' + encodeURIComponent(val);
+            });
+            window.location.href = currentTargetUrl + queryParams;
         }
     }
     

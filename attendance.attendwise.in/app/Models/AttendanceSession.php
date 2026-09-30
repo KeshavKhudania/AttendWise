@@ -25,10 +25,12 @@ class AttendanceSession extends Model
         'longitude',
         'venue',
         'geo_locations',
+        'timing_slot_ids',
     ];
 
     protected $casts = [
         'geo_locations' => 'array',
+        'timing_slot_ids' => 'array',
     ];
 
     protected static function boot()

@@ -4,7 +4,43 @@
 @section('header-subtitle', $event ? 'Event: ' . $event->name : 'Ad-Hoc Session')
 
 @section('styles')
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <style>
+    /* Select2 Dark Theme Fixes */
+    .select2-container--default .select2-selection--single {
+        background-color: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 0.75rem;
+        height: 48px;
+        display: flex;
+        align-items: center;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+        color: var(--text-main);
+        padding-left: 1rem;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: 46px;
+        right: 10px;
+    }
+    .select2-dropdown {
+        background-color: var(--card-bg);
+        border: 1px solid var(--border);
+    }
+    .select2-container--default .select2-results__option--selected {
+        background-color: var(--subtle-bg);
+    }
+    .select2-container--default .select2-results__option--highlighted.select2-results__option--selectable {
+        background-color: #10b981;
+        color: white;
+    }
+    .select2-search--dropdown .select2-search__field {
+        background-color: var(--bg);
+        border: 1px solid var(--border);
+        color: var(--text-main);
+        border-radius: 0.25rem;
+    }
+
     .meta-bar {
         display: flex;
         gap: 2rem;
@@ -182,9 +218,46 @@
                 <div id="qr-timer-bar" style="height: 100%; width: 100%; background: #10b981;"></div>
             </div>
             
-            <button onclick="openMethodModal()" style="background: transparent; padding: 0.85rem 2rem; border-radius: 0.75rem; border: 1px solid var(--border); color: var(--text-main); cursor: pointer; font-weight: 600; width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+            <button onclick="openMethodModal()" style="background: transparent; padding: 0.85rem 2rem; border-radius: 0.75rem; border: 1px solid var(--border); color: var(--text-main); cursor: pointer; font-weight: 600; width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin-bottom: 1.5rem;">
                 <i data-lucide="arrow-left-right" style="width: 18px;"></i> Switch Method
             </button>
+
+            <!-- GEO CHECK SECTION FOR QR -->
+            <div style="width: 100%; text-align: left; padding-top: 1.5rem; border-top: 1px solid var(--border);">
+                <label style="display: flex; align-items: center; gap: 0.75rem; font-weight: 600; color: var(--text-main); cursor: pointer; margin-bottom: 1rem;">
+                    <div class="switch">
+                        <input type="checkbox" id="toggleGeoCheck" {{ $session->is_geofencing ? 'checked' : '' }}>
+                        <span class="slider"></span>
+                    </div>
+                    Require Geo Check
+                </label>
+                
+                <div id="geoSettingSection" style="display: {{ $session->is_geofencing ? 'block' : 'none' }}; border: 1px solid var(--border); border-radius: 1rem; padding: 1.5rem; background: var(--subtle-bg);">
+                    <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.5rem; display: block;">Add a Location</label>
+                    <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+                        <div style="flex: 1; min-width: 0;">
+                            <select id="location-select" style="width: 100%;">
+                                <option value="">Search for a venue...</option>
+                            </select>
+                        </div>
+                        <button id="btnAddLocation" style="background: var(--card-bg); color: var(--text-main); border: 1px solid var(--border); padding: 0 1rem; border-radius: 0.5rem; cursor: pointer; flex-shrink: 0;" title="Add Location">
+                            <i data-lucide="plus" style="width: 18px;"></i>
+                        </button>
+                    </div>
+                    
+                    <div id="geoCoordinates">
+                        <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Active Coordinates</div>
+                        <div id="locationsList" style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.5rem; text-align: left; max-height: 150px; overflow-y: auto; margin-bottom: 1.5rem;">
+                            <!-- Rendered by JS -->
+                        </div>
+                    </div>
+                    
+                    <button id="btnSetLocation" style="width: 100%; background: #10b981; color: white; border: none; padding: 0.85rem; border-radius: 0.75rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                        <i data-lucide="check" style="width: 18px;"></i> Update & Enable Geo-Location
+                    </button>
+                </div>
+            </div>
+            
         </div>
 
         <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 1.5rem; display: flex; flex-direction: column; max-height: calc(100vh - 200px);">
@@ -346,6 +419,8 @@
 @endsection
 
 @section('scripts')
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
     const csrfToken = '{{ csrf_token() }}';
     const isQrMode = {{ request('method') == 'qr' ? 'true' : 'false' }};
@@ -423,7 +498,7 @@
                 qrcodeObj.makeCode(data.payload);
                 
                 setTimeout(() => {
-                    timerBar.style.transition = 'width 10s linear';
+                    timerBar.style.transition = 'width 4s linear';
                     timerBar.style.width = '0%';
                 }, 50);
             }
@@ -432,14 +507,15 @@
 
     if(isQrMode) {
         refreshQR();
-        qrInterval = setInterval(refreshQR, 10000);
+        qrInterval = setInterval(refreshQR, 4000);
     }
 
-    // --- Geo-Location Logic ---
+    // --- Geo-Location Logic (Standard Manual Layout) ---
     const btnToggleGeo = document.getElementById('btnToggleGeo');
     let isGeoActive = {{ $session->is_geofencing ? 'true' : 'false' }};
     const geoToggleUrl = "{{ route('club.attendance.geo.toggle', $session->id) }}";
     
+    // For manual mode auto-detection
     if(btnToggleGeo) {
         btnToggleGeo.addEventListener('click', () => {
             if(!isGeoActive) {
@@ -486,6 +562,130 @@
         }
         lucide.createIcons();
     }
+    
+    // --- Geo-Location Logic (QR Layout) ---
+    let geoLocations = @json($session->geo_locations ?? []);
+    
+    $(document).ready(function() {
+        if ($('#location-select').length) {
+            $('#location-select').select2({
+                ajax: {
+                    url: "{{ route('club.locations.search') }}",
+                    dataType: 'json',
+                    delay: 250,
+                    data: function (params) {
+                        return { q: params.term, page: params.page || 1 };
+                    },
+                    processResults: function (data) {
+                        return { results: data.results, pagination: data.pagination };
+                    },
+                    cache: true
+                },
+                placeholder: 'Search for a venue...',
+                minimumInputLength: 0,
+            });
+            renderLocations();
+        }
+    });
+
+    const toggleGeoCheck = document.getElementById('toggleGeoCheck');
+    const geoSettingSection = document.getElementById('geoSettingSection');
+    
+    if (toggleGeoCheck) {
+        toggleGeoCheck.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                geoSettingSection.style.display = 'block';
+            } else {
+                geoSettingSection.style.display = 'none';
+                // Turn off geo directly
+                fetch(geoToggleUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
+                    body: JSON.stringify({ is_geofencing: false })
+                }).then(res => res.json()).then(data => {
+                    if (data.success) {
+                        isGeoActive = false;
+                        alert('Geo Check Disabled');
+                    }
+                });
+            }
+        });
+    }
+
+    if (document.getElementById('btnAddLocation')) {
+        document.getElementById('btnAddLocation').addEventListener('click', () => {
+            const data = $('#location-select').select2('data')[0];
+            if (!data || !data.id) {
+                alert('Please search and select a location from the dropdown first.');
+                return;
+            }
+            if (!data.latitude || !data.longitude) {
+                alert('This location does not have coordinates defined.');
+                return;
+            }
+            geoLocations.push({ name: data.text, lat: data.latitude, lng: data.longitude });
+            $('#location-select').val(null).trigger('change');
+            renderLocations();
+        });
+    }
+    
+    if (document.getElementById('btnSetLocation')) {
+        document.getElementById('btnSetLocation').addEventListener('click', () => {
+            if (geoLocations.length === 0) {
+                alert('Please add at least one location first.');
+                return;
+            }
+            const btn = document.getElementById('btnSetLocation');
+            const originalContent = btn.innerHTML;
+            btn.innerHTML = `<i data-lucide="loader" class="spin" style="width: 18px;"></i> Updating...`;
+            lucide.createIcons();
+            
+            fetch(geoToggleUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
+                body: JSON.stringify({ is_geofencing: true, geo_locations: geoLocations })
+            }).then(res => res.json()).then(data => {
+                if(data.success) {
+                    btn.innerHTML = `<i data-lucide="check" style="width: 18px;"></i> Updated!`;
+                    isGeoActive = true;
+                    setTimeout(() => { btn.innerHTML = originalContent; lucide.createIcons(); }, 2000);
+                } else {
+                    alert('Failed to update geo location');
+                    btn.innerHTML = originalContent;
+                }
+                lucide.createIcons();
+            });
+        });
+    }
+
+    function renderLocations() {
+        const list = document.getElementById('locationsList');
+        if (!list) return;
+        list.innerHTML = '';
+        if (geoLocations.length === 0) {
+            list.innerHTML = '<div style="color: var(--text-muted); font-size: 0.85rem; font-style: italic;">No locations added yet.</div>';
+            return;
+        }
+        geoLocations.forEach((loc, index) => {
+            list.innerHTML += `
+                <div style="background: var(--card-bg); border: 1px solid var(--border); padding: 0.75rem 1rem; border-radius: 0.5rem; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div style="font-weight: 600; font-size: 0.85rem; color: var(--text-main);">${loc.name}</div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted); font-family: monospace;">${loc.lat}, ${loc.lng}</div>
+                    </div>
+                    <button onclick="removeLocation(${index})" style="background: transparent; border: none; color: #ef4444; cursor: pointer; padding: 0.25rem;">
+                        <i data-lucide="trash-2" style="width: 16px;"></i>
+                    </button>
+                </div>
+            `;
+        });
+        lucide.createIcons();
+    }
+
+    window.removeLocation = function(index) {
+        geoLocations.splice(index, 1);
+        renderLocations();
+    };
     
     // --- WebSockets integration for Live QR updates ---
     let qrPresentCount = {{ count($records) }};

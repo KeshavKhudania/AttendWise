@@ -45,7 +45,7 @@
             </div>
         </div>
 
-        <!-- Radar Animation & Camera Container -->
+        <!-- Radar Animation (Shown before camera starts) -->
         <div id="radarContainer" style="position: relative; width: 240px; height: 240px; margin: 0 auto 50px; display: flex; align-items: center; justify-content: center; border-radius: 50%; border: 1px solid rgba(59, 130, 246, 0.2); background: radial-gradient(circle, rgba(59,130,246,0.05) 0%, transparent 70%); box-shadow: 0 0 50px rgba(59, 130, 246, 0.1);">
             <div class="radar-grid"></div>
             <div class="radar-sweep"></div>
@@ -53,11 +53,15 @@
             <div class="radar-circle circle-2"></div>
             <div class="radar-circle circle-3"></div>
             <div style="position: relative; z-index: 10; width: 130px; height: 130px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 30px rgba(59, 130, 246, 0.5), inset 0 0 20px rgba(0,0,0,0.8); border: 4px solid #3b82f6; overflow: hidden; background: #000;">
-                <video id="faceVideo" autoplay muted playsinline style="width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); display: none; filter: contrast(1.1) brightness(1.1);"></video>
-                <canvas id="faceOverlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; transform: scaleX(-1); pointer-events: none;"></canvas>
-                <i id="cameraPlaceholder" class="fa-solid fa-fingerprint" style="font-size: 3rem; color: #3b82f6; filter: drop-shadow(0 0 10px rgba(59,130,246,0.5));"></i>
-                <div id="faceStatus" style="position: absolute; bottom: 12px; left: 0; right: 0; text-align: center; font-size: 0.65rem; font-weight: 800; color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,1); z-index: 15; display: none; text-transform: uppercase; letter-spacing: 1px;">Initializing</div>
+                <i class="fa-solid fa-fingerprint" style="font-size: 3rem; color: #3b82f6; filter: drop-shadow(0 0 10px rgba(59,130,246,0.5));"></i>
             </div>
+        </div>
+
+        <!-- Camera Container (Initially Hidden) -->
+        <div id="cameraContainer" style="display: none; position: relative; width: 100%; max-width: 320px; aspect-ratio: 3/4; margin: 0 auto 40px; border-radius: 24px; border: 2px solid rgba(59, 130, 246, 0.5); overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.2), 0 0 30px rgba(59, 130, 246, 0.2); background: #000;">
+            <video id="faceVideo" autoplay muted playsinline style="width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); filter: contrast(1.1) brightness(1.1);"></video>
+            <canvas id="faceOverlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; transform: scaleX(-1); pointer-events: none;"></canvas>
+            <div id="faceStatus" style="position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(5px); padding: 12px; text-align: center; font-size: 0.8rem; font-weight: 800; color: #fff; z-index: 15; text-transform: uppercase; letter-spacing: 1px; transition: all 0.3s;">Initializing</div>
         </div>
 
         @if($alreadyMarked)
@@ -200,8 +204,9 @@ html, body {
     async function initiateCamera() {
         const startBtn = document.getElementById('startScanBtn');
         const markBtn = document.getElementById('markBtn');
+        const radar = document.getElementById('radarContainer');
+        const camContainer = document.getElementById('cameraContainer');
         const video = document.getElementById('faceVideo');
-        const placeholder = document.getElementById('cameraPlaceholder');
         const status = document.getElementById('faceStatus');
         
         if (startBtn) {
@@ -209,9 +214,12 @@ html, body {
             startBtn.disabled = true;
             startBtn.style.opacity = '0.7';
         }
+
+        // Hide radar, show camera container
+        if (radar) radar.style.display = 'none';
+        if (camContainer) camContainer.style.display = 'block';
         
         status.innerText = "Starting Camera...";
-        status.style.display = 'block';
 
         if (!faceModelsLoaded) {
             status.innerText = "Loading AI Models...";
@@ -223,21 +231,18 @@ html, body {
         try {
             cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
             video.srcObject = cameraStream;
-            video.style.display = 'block';
-            if (placeholder) placeholder.style.display = 'none';
-            status.innerText = "Camera Active";
+            status.innerText = "Camera Active - Tap to Verify";
             
             if (startBtn) startBtn.style.display = 'none';
             if (markBtn) markBtn.style.display = 'flex';
-            
-            setTimeout(() => { status.style.display = 'none'; }, 2000);
         } catch(err) {
             status.innerText = "Camera Denied";
-            status.style.color = "#ef4444";
+            status.style.background = "rgba(239, 68, 68, 0.8)";
             if (startBtn) {
                 startBtn.innerHTML = '<i class="fa-solid fa-camera" style="font-size: 1.5rem;"></i> Try Camera Again';
                 startBtn.disabled = false;
                 startBtn.style.opacity = '1';
+                startBtn.style.display = 'flex';
             }
         }
     }
@@ -253,7 +258,9 @@ function markLiveAttendance() {
         return;
     }
     
-    if (!navigator.geolocation) {
+    let isGeofencingRequired = {{ $session->is_geofencing ? 'true' : 'false' }};
+    
+    if (isGeofencingRequired && !navigator.geolocation) {
         if(typeof showToast === 'function') showToast("Geolocation is not supported by your browser.", "error");
         else alert("Geolocation is not supported by your browser.");
         return;
@@ -267,20 +274,16 @@ function markLiveAttendance() {
 
     // Set UI to loading state
     const originalText = btn.innerHTML;
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Acquiring Location...';
     btn.style.opacity = '0.7';
     btn.disabled = true;
-    
-    navigator.geolocation.getCurrentPosition(async function(position) {
-        const lat = position.coords.latitude;
-        const lng = position.coords.longitude;
-        
+
+    async function processFaceMatch(lat = null, lng = null) {
         btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Analyzing Face...';
         
         const video = document.getElementById('faceVideo');
         const overlay = document.getElementById('faceOverlay');
         const status = document.getElementById('faceStatus');
-        status.style.display = 'block';
+        status.style.background = 'rgba(0,0,0,0.7)';
         status.innerText = "Scanning Face...";
 
         const parsedDescriptors = registeredFaceDescriptors.map(arr => new Float32Array(arr));
@@ -312,9 +315,8 @@ function markLiveAttendance() {
                     if (bestMatch.label === 'student') {
                         // Match successful!
                         clearInterval(verificationInterval);
-                        video.srcObject.getTracks().forEach(track => track.stop());
                         
-                        document.getElementById('faceStatus').innerHTML = '<i class="fa-solid fa-circle-check"></i> Face Matched! Verifying Location...';
+                        document.getElementById('faceStatus').innerHTML = '<i class="fa-solid fa-circle-check"></i> Face Matched!';
                         document.getElementById('faceStatus').style.background = '#10b981';
                         
                         submitAttendance(lat, lng);
@@ -330,7 +332,6 @@ function markLiveAttendance() {
                 scanAttempts++;
                 if (scanAttempts > 60) { // 30 seconds max
                     clearInterval(verificationInterval);
-                    video.srcObject.getTracks().forEach(track => track.stop());
                     document.getElementById('faceStatus').innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Verification timed out.';
                     document.getElementById('faceStatus').style.background = '#ef4444';
                     btn.style.display = 'flex';
@@ -339,24 +340,32 @@ function markLiveAttendance() {
                     btn.disabled = false;
                 }
             }, 500);
-
-    }, function(error) {
-        let msg = "Error getting location.";
-        if (error.code === 1) msg = "Location permission denied. Please allow it in settings.";
-        else if (error.code === 2) msg = "Location unavailable. Ensure GPS is on.";
-        else if (error.code === 3) msg = "Location request timed out.";
-        
-        if(typeof showToast === 'function') showToast(msg, "error");
-        else alert(msg);
-        
-        btn.innerHTML = originalText;
-        btn.style.opacity = '1';
-        btn.disabled = false;
-    }, {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0
-    });
+    }
+    
+    if (isGeofencingRequired) {
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Acquiring Location...';
+        navigator.geolocation.getCurrentPosition(async function(position) {
+            processFaceMatch(position.coords.latitude, position.coords.longitude);
+        }, function(error) {
+            let msg = "Error getting location.";
+            if (error.code === 1) msg = "Location permission denied. Please allow it in settings.";
+            else if (error.code === 2) msg = "Location unavailable. Ensure GPS is on.";
+            else if (error.code === 3) msg = "Location request timed out.";
+            
+            if(typeof showToast === 'function') showToast(msg, "error");
+            else alert(msg);
+            
+            btn.innerHTML = originalText;
+            btn.style.opacity = '1';
+            btn.disabled = false;
+        }, {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
+        });
+    } else {
+        processFaceMatch(null, null);
+    }
 }
 
 function submitAttendance(lat, lng) {
@@ -407,5 +416,30 @@ function submitAttendance(lat, lng) {
         }
     });
 }
+</script>
+</script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        if (window.Echo) {
+            window.Echo.join('attendance.session.{{ $session->uuid }}')
+                .listen('.LiveAttendanceAction', (e) => {
+                    if (e.action === 'geo_updated') {
+                        isGeofencingRequired = e.payload.is_geofencing;
+                        
+                        if (isGeofencingRequired) {
+                            if(typeof showToast === 'function') showToast("Manager enabled Geo-Fencing. GPS will be required.", "info");
+                        } else {
+                            if(typeof showToast === 'function') showToast("Manager disabled Geo-Fencing. GPS is no longer required.", "info");
+                        }
+                    } else if (e.action === 'session_ended') {
+                        if(typeof showToast === 'function') showToast("Session closed by manager.", "info");
+                        setTimeout(() => {
+                            window.location.href = "{{ route('student.dashboard') }}";
+                        }, 2000);
+                    }
+                });
+        }
+    });
 </script>
 @endsection

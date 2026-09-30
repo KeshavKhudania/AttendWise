@@ -424,7 +424,10 @@ class DashboardController extends Controller
             
         $adhoc_sessions = $query->get();
             
-        return view('club.attendance', compact('manager', 'club', 'events', 'adhoc_sessions'));
+        $settings = \DB::table('institution_academic_settings')->where('institution_id', $club->institution_id)->first();
+        $slot_timings = $settings && $settings->slot_timings ? json_decode($settings->slot_timings, true) : [];
+            
+        return view('club.attendance', compact('manager', 'club', 'events', 'adhoc_sessions', 'slot_timings'));
     }
 
     public function geoAttendance(Request $request)
@@ -512,6 +515,10 @@ class DashboardController extends Controller
             ]
         );
         
+        if ($request->has('timing_slot_ids')) {
+            $session->update(['timing_slot_ids' => $request->input('timing_slot_ids')]);
+        }
+        
         $method = $request->query('method', $request->input('method'));
         if ($method === 'geo') {
             return redirect()->route('club.attendance.geo.session', ['session_id' => $session->id]);
@@ -531,6 +538,7 @@ class DashboardController extends Controller
         $session = \App\Models\AttendanceSession::create([
             'institution_id' => $club->institution_id,
             'club_id' => $club->id,
+            'timing_slot_ids' => $request->has('timing_slot_ids') ? $request->input('timing_slot_ids') : null,
             'date' => now()->toDateString(),
             'start_time' => now()->toTimeString(),
             'end_time' => now()->addHours(2)->toTimeString(), // Default 2 hours
@@ -538,11 +546,49 @@ class DashboardController extends Controller
             'is_geofencing' => 0
         ]);
         
-        $method = $request->input('method', $request->query('method'));
+        $method = $request->query('method', $request->input('method'));
         if ($method === 'geo') {
             return redirect()->route('club.attendance.geo.session', ['session_id' => $session->id]);
         }
         return redirect()->route('club.attendance.manage', ['session_id' => $session->id, 'method' => $method]);
+    }
+    
+    public function searchSchedules(Request $request)
+    {
+        $manager = Auth::guard('club')->user();
+        $query = $request->input('q');
+        $page = $request->input('page', 1);
+        
+        $schedulesQuery = \App\Models\Schedule::where('institution_id', $manager->club->institution_id)
+            ->with(['subject', 'faculty', 'section.course']);
+            
+        if ($query) {
+            $schedulesQuery->whereHas('subject', function($q) use ($query) {
+                $q->where('name', 'LIKE', "%{$query}%");
+            })->orWhereHas('faculty.user', function($q) use ($query) {
+                $q->where('name', 'LIKE', "%{$query}%");
+            })->orWhereHas('section.course', function($q) use ($query) {
+                $q->where('code', 'LIKE', "%{$query}%");
+            });
+        }
+        
+        $schedules = $schedulesQuery->paginate(20, ['*'], 'page', $page);
+        
+        $results = [];
+        foreach ($schedules as $schedule) {
+            $courseSection = $schedule->section ? (($schedule->section->course->code ?? 'Course') . ' - ' . $schedule->section->name) : 'N/A';
+            $text = "{$courseSection} | {$schedule->subject->name} | " . \Carbon\Carbon::parse($schedule->start_time)->format('h:i A') . ' - ' . \Carbon\Carbon::parse($schedule->end_time)->format('h:i A');
+            $results[] = [
+                'id' => $schedule->id,
+                'text' => $text,
+                'group' => $schedule->day_of_week
+            ];
+        }
+        
+        return response()->json([
+            'results' => $results,
+            'pagination' => ['more' => $schedules->hasMorePages()]
+        ]);
     }
 
     public function attendanceManage($session_id)
@@ -583,6 +629,7 @@ class DashboardController extends Controller
                     'student_id' => $student_id,
                     'club_id' => $club->id,
                     'event_id' => $session->event_id,
+                    'schedule_id' => $session->schedule_id,
                 ],
                 [
                     'date' => $session->date,
@@ -653,6 +700,15 @@ class DashboardController extends Controller
             } catch (\Exception $e) {
                 \Illuminate\Support\Facades\Log::warning('Failed to broadcast geo session closed: ' . $e->getMessage());
             }
+        }
+        
+        try {
+            event(new \App\Events\LiveAttendanceAction($session->uuid, 'geo_updated', [
+                'is_geofencing' => $session->is_geofencing,
+                'geo_locations' => $session->geo_locations
+            ]));
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::warning('Failed to broadcast geo_updated: ' . $e->getMessage());
         }
         
         return response()->json(['success' => true]);

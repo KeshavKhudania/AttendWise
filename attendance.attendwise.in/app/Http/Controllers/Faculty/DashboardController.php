@@ -279,12 +279,14 @@ class DashboardController extends Controller
                 'student_id' => $studentId,
                 'schedule_id' => $session->schedule_id,
                 'date' => $session->date,
+                'club_id' => $session->club_id,
+                'event_id' => $session->event_id,
             ],
             [
                 'attendance_session_id' => $session->id,
                 'marked_by_faculty_id' => $session->faculty_id,
                 'status' => 'present',
-                'remarks' => 'Marked via QR Scan',
+                'remarks' => $session->club_id ? 'Marked via Club QR Scan' : 'Marked via QR Scan',
             ]
         );
 
