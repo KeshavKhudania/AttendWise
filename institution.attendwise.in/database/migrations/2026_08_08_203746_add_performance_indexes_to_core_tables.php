@@ -19,11 +19,15 @@ return new class extends Migration
         Schema::table('institution_students', function (Blueprint $table) {
             $table->index(['institution_id', 'section_id'], 'idx_stu_inst_sec');
             $table->index('roll_number', 'idx_stu_roll_number');
-            $table->index('enrollment_number', 'idx_stu_enroll_number');
+            if (\Illuminate\Support\Facades\Schema::hasColumn('institution_students', 'enrollment_number')) {
+                $table->index('enrollment_number', 'idx_stu_enroll_number');
+            }
         });
 
         Schema::table('institution_faculties', function (Blueprint $table) {
-            $table->index('employee_code', 'idx_fac_employee_code');
+            if (\Illuminate\Support\Facades\Schema::hasColumn('institution_faculties', 'employee_code')) {
+                $table->index('employee_code', 'idx_fac_employee_code');
+            }
         });
 
         \Illuminate\Support\Facades\DB::statement('CREATE INDEX idx_stu_email_hash ON institution_students (email_hash(64))');
@@ -45,11 +49,15 @@ return new class extends Migration
         Schema::table('institution_students', function (Blueprint $table) {
             $table->dropIndex('idx_stu_inst_sec');
             $table->dropIndex('idx_stu_roll_number');
-            $table->dropIndex('idx_stu_enroll_number');
+            if (\Illuminate\Support\Facades\Schema::hasColumn('institution_students', 'enrollment_number')) {
+                $table->dropIndex('idx_stu_enroll_number');
+            }
         });
 
         Schema::table('institution_faculties', function (Blueprint $table) {
-            $table->dropIndex('idx_fac_employee_code');
+            if (\Illuminate\Support\Facades\Schema::hasColumn('institution_faculties', 'employee_code')) {
+                $table->dropIndex('idx_fac_employee_code');
+            }
         });
 
         \Illuminate\Support\Facades\DB::statement('DROP INDEX idx_stu_email_hash ON institution_students');
