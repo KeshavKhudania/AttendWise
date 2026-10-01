@@ -16,11 +16,13 @@ return new class extends Migration
             $table->dropUnique(['roll_number']); 
         });
 
-        Schema::table('institution_students', function (Blueprint $table) {
+        if (!\Illuminate\Support\Facades\Schema::hasColumn('institution_students', 'email')) {
+            Schema::table('institution_students', function (Blueprint $table) {
             $table->text('email')->change();
             $table->text('mobile')->nullable()->change();
             $table->text('roll_number')->change();
         });
+        }
     }
 
     /**
@@ -28,11 +30,13 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('institution_students', function (Blueprint $table) {
+        if (!\Illuminate\Support\Facades\Schema::hasColumn('institution_students', 'email')) {
+            Schema::table('institution_students', function (Blueprint $table) {
             $table->string('email', 191)->change();
             $table->string('mobile', 191)->nullable()->change();
             $table->string('roll_number', 191)->change();
         });
+        }
 
         Schema::table('institution_students', function (Blueprint $table) {
             $table->unique(['email']);

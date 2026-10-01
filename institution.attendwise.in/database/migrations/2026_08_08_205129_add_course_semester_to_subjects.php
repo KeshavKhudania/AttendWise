@@ -11,11 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('institution_subjects', function (Blueprint $table) {
+        if (!\Illuminate\Support\Facades\Schema::hasColumn('institution_subjects', 'course_id')) {
+            Schema::table('institution_subjects', function (Blueprint $table) {
             $table->unsignedBigInteger('course_id')->nullable()->after('department_id');
             $table->integer('semester')->nullable()->after('course_id');
             $table->unsignedBigInteger('additional_department_id')->nullable()->after('semester');
         });
+        }
     }
 
     /**

@@ -10,10 +10,12 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::table('institution_schedules', function (Blueprint $table) {
+        if (!\Illuminate\Support\Facades\Schema::hasColumn('institution_schedules', 'is_temporary')) {
+            Schema::table('institution_schedules', function (Blueprint $table) {
             $table->boolean('is_temporary')->default(0)->after('status');
             $table->date('schedule_date')->nullable()->after('is_temporary');
         });
+        }
     }
 
     /**

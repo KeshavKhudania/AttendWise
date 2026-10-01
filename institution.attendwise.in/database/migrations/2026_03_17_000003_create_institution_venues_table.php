@@ -25,19 +25,23 @@ return new class extends Migration {
         }
 
         // Update event venues to support new Venue model
-        Schema::table('institution_event_venues', function (Blueprint $table) {
+        if (!\Illuminate\Support\Facades\Schema::hasColumn('institution_event_venues', 'venue_id')) {
+            Schema::table('institution_event_venues', function (Blueprint $table) {
             $table->foreignId('venue_id')->nullable()->after('classroom_id')->constrained('institution_venues')->onDelete('cascade');
             $table->unsignedBigInteger('classroom_id')->nullable()->change();
         });
+        }
     }
 
     public function down(): void
     {
-        Schema::table('institution_event_venues', function (Blueprint $table) {
+        if (!\Illuminate\Support\Facades\Schema::hasColumn('institution_event_venues', 'classroom_id')) {
+            Schema::table('institution_event_venues', function (Blueprint $table) {
             $table->dropForeign(['venue_id']);
             $table->dropColumn('venue_id');
             $table->unsignedBigInteger('classroom_id')->nullable(false)->change();
         });
+        }
         Schema::dropIfExists('institution_venues');
     }
 };

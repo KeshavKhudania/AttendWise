@@ -10,9 +10,11 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::table('institution_departments', function (Blueprint $table) {
+        if (!\Illuminate\Support\Facades\Schema::hasColumn('institution_departments', 'is_additional')) {
+            Schema::table('institution_departments', function (Blueprint $table) {
             $table->boolean('is_additional')->default(0)->after('name');
         });
+        }
     }
 
     /**

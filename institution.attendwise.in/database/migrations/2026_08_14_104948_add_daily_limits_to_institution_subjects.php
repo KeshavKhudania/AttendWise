@@ -11,11 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('institution_subjects', function (Blueprint $table) {
+        if (!\Illuminate\Support\Facades\Schema::hasColumn('institution_subjects', 'max_lectures_per_day')) {
+            Schema::table('institution_subjects', function (Blueprint $table) {
             $table->integer('max_lectures_per_day')->nullable()->after('weekly_lectures');
             $table->integer('min_lectures_per_day')->nullable()->after('max_lectures_per_day');
             $table->boolean('continuous_lectures')->default(1)->after('min_lectures_per_day');
         });
+        }
     }
 
     /**

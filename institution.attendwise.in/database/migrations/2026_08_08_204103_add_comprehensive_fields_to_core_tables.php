@@ -11,7 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('institution_students', function (Blueprint $table) {
+        if (!\Illuminate\Support\Facades\Schema::hasColumn('institution_students', 'blood_group')) {
+            Schema::table('institution_students', function (Blueprint $table) {
             // Personal Details
             $table->string('blood_group', 10)->nullable();
             $table->string('religion', 50)->nullable();
@@ -44,8 +45,10 @@ return new class extends Migration
             $table->text('medical_history')->nullable();
             $table->string('profile_image')->nullable();
         });
+        }
 
-        Schema::table('institution_faculties', function (Blueprint $table) {
+        if (!\Illuminate\Support\Facades\Schema::hasColumn('institution_faculties', 'blood_group')) {
+            Schema::table('institution_faculties', function (Blueprint $table) {
             // Personal & Identity
             $table->string('blood_group', 10)->nullable();
             $table->string('nationality', 50)->nullable();
@@ -74,6 +77,7 @@ return new class extends Migration
             // Misc
             $table->string('profile_image')->nullable();
         });
+        }
     }
 
     /**
