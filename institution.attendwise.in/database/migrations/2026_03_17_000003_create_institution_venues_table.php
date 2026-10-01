@@ -7,7 +7,8 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
-        Schema::create('institution_venues', function (Blueprint $table) {
+        if (!\Illuminate\Support\Facades\Schema::hasTable('institution_venues')) {
+            Schema::create('institution_venues', function (Blueprint $table) {
             $table->id();
             $table->foreignId('institution_id')->constrained('institutions')->onDelete('cascade');
             $table->string('name');
@@ -21,6 +22,7 @@ return new class extends Migration {
             $table->timestamps();
             $table->softDeletes();
         });
+        }
 
         // Update event venues to support new Venue model
         Schema::table('institution_event_venues', function (Blueprint $table) {

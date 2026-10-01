@@ -8,13 +8,15 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('institution_class_groups', function (Blueprint $table) {
+        if (!\Illuminate\Support\Facades\Schema::hasTable('institution_class_groups')) {
+            Schema::create('institution_class_groups', function (Blueprint $table) {
             $table->id();
             $table->foreignId('section_id')->constrained("institution_sections")->onDelete('cascade');
             $table->foreignId('institution_id')->constrained("institutions")->onDelete('cascade');
             $table->string('name'); // This is where you store "G1", "G2", etc.
             $table->timestamps();
         });
+        }
     }
 
     public function down(): void

@@ -11,7 +11,8 @@ return new class extends Migration
      */
      public function up(): void
     {
-        Schema::create('institution_class_room_types', function (Blueprint $table) {
+        if (!\Illuminate\Support\Facades\Schema::hasTable('institution_class_room_types')) {
+            Schema::create('institution_class_room_types', function (Blueprint $table) {
             $table->id();
 
             // Multi-tenant support
@@ -31,6 +32,7 @@ return new class extends Migration
             // Indexes
             $table->index(['institution_id', 'status']);
         });
+        }
     }
 
     /**

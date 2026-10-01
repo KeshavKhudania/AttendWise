@@ -11,7 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('institution_faculty_subject', function (Blueprint $table) {
+        if (!\Illuminate\Support\Facades\Schema::hasTable('institution_faculty_subject')) {
+            Schema::create('institution_faculty_subject', function (Blueprint $table) {
             $table->foreignId('institution_id')->constrained("institutions")->onDelete('cascade');
             // Foreign key for the faculties table
             $table->foreignId('faculty_id')->constrained("institution_faculties")->onDelete('cascade');
@@ -23,6 +24,7 @@ return new class extends Migration
             // This ensures a faculty member cannot be assigned to the same subject more than once.
             $table->primary(['faculty_id', 'subject_id']);
         });
+        }
     }
 
     /**

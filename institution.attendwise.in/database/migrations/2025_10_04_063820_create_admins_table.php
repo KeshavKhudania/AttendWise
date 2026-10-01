@@ -8,7 +8,8 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('institution_admins', function (Blueprint $table) {
+        if (!\Illuminate\Support\Facades\Schema::hasTable('institution_admins')) {
+            Schema::create('institution_admins', function (Blueprint $table) {
             $table->id();
             $table->foreignId('admin_group_id')->constrained("institution_admin_groups")->onDelete('cascade');
             $table->foreignId('institution_id')->constrained()->onDelete('cascade');
@@ -19,6 +20,7 @@ return new class extends Migration
             $table->rememberToken();
             $table->timestamps();
         });
+        }
     }
 
     public function down(): void

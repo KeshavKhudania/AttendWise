@@ -10,7 +10,8 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('institution_academic_settings', function (Blueprint $table) {
+        if (!\Illuminate\Support\Facades\Schema::hasTable('institution_academic_settings')) {
+            Schema::create('institution_academic_settings', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('institution_id');
             $table->integer('slots_per_day')->default(8);
@@ -25,6 +26,7 @@ return new class extends Migration {
 
             $table->foreign('institution_id')->references('id')->on('institutions')->onDelete('cascade');
         });
+        }
     }
 
     /**

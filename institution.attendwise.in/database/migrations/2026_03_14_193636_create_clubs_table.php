@@ -10,7 +10,8 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('institution_clubs', function (Blueprint $table) {
+        if (!\Illuminate\Support\Facades\Schema::hasTable('institution_clubs')) {
+            Schema::create('institution_clubs', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('institution_id');
             $table->string('name');
@@ -19,6 +20,7 @@ return new class extends Migration {
             $table->timestamps();
             $table->softDeletes();
         });
+        }
     }
 
     /**

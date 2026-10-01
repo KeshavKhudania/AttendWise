@@ -11,7 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('institution_import_logs', function (Blueprint $table) {
+        if (!\Illuminate\Support\Facades\Schema::hasTable('institution_import_logs')) {
+            Schema::create('institution_import_logs', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('institution_id');
             $table->string('type'); // students
@@ -21,6 +22,7 @@ return new class extends Migration
             $table->json('errors')->nullable();
             $table->timestamps();
         });
+        }
 
     }
 

@@ -11,7 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('institution_notifications', function (Blueprint $table) {
+        if (!\Illuminate\Support\Facades\Schema::hasTable('institution_notifications')) {
+            Schema::create('institution_notifications', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('institution_id');
             $table->string('title');
@@ -20,6 +21,7 @@ return new class extends Migration
             $table->boolean('is_read')->default(false);
             $table->timestamps();
         });
+        }
 
     }
 

@@ -11,7 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('institutions', function (Blueprint $table) {
+        if (!\Illuminate\Support\Facades\Schema::hasTable('institutions')) {
+            Schema::create('institutions', function (Blueprint $table) {
             $table->id();
 
             // GENERAL
@@ -64,6 +65,7 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
         });
+        }
     }
 
     /**

@@ -11,7 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('institution_classrooms', function (Blueprint $table) {
+        if (!\Illuminate\Support\Facades\Schema::hasTable('institution_classrooms')) {
+            Schema::create('institution_classrooms', function (Blueprint $table) {
             $table->id();
             $table->foreignId('block_id')->constrained("institution_blocks")->onDelete('cascade');
             $table->foreignId('department_id')->constrained("institution_departments")->onDelete('cascade');
@@ -23,6 +24,7 @@ return new class extends Migration
             $table->decimal('longitude', 11, 8);
             $table->timestamps();
         });
+        }
     }
 
     /**

@@ -10,10 +10,12 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('chat_messages', function (Blueprint $table) {
+        if (!\Illuminate\Support\Facades\Schema::hasTable('chat_messages')) {
+            Schema::create('chat_messages', function (Blueprint $table) {
             $table->id();
             $table->timestamps();
         });
+        }
     }
 
     /**

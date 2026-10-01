@@ -10,10 +10,12 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('found_items', function (Blueprint $table) {
+        if (!\Illuminate\Support\Facades\Schema::hasTable('found_items')) {
+            Schema::create('found_items', function (Blueprint $table) {
             $table->id();
             $table->timestamps();
         });
+        }
     }
 
     /**

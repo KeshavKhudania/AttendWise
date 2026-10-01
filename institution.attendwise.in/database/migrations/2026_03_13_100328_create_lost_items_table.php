@@ -10,7 +10,8 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('lost_items', function (Blueprint $table) {
+        if (!\Illuminate\Support\Facades\Schema::hasTable('lost_items')) {
+            Schema::create('lost_items', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->string('title');
@@ -21,6 +22,7 @@ return new class extends Migration {
             $table->enum('status', ['lost', 'found', 'returned'])->default('lost');
             $table->timestamps();
         });
+        }
     }
 
     /**

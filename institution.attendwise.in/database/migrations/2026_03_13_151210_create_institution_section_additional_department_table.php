@@ -10,12 +10,14 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('institution_section_additional_departments', function (Blueprint $table) {
+        if (!\Illuminate\Support\Facades\Schema::hasTable('institution_section_additional_departments')) {
+            Schema::create('institution_section_additional_departments', function (Blueprint $table) {
             $table->id();
             $table->foreignId('section_id')->constrained('institution_sections')->onDelete('cascade');
             $table->foreignId('department_id')->constrained('institution_departments')->onDelete('cascade');
             $table->timestamps();
         });
+        }
     }
 
     /**

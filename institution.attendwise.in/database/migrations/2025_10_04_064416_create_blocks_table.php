@@ -11,7 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('institution_blocks', function (Blueprint $table) {
+        if (!\Illuminate\Support\Facades\Schema::hasTable('institution_blocks')) {
+            Schema::create('institution_blocks', function (Blueprint $table) {
             $table->id();
             $table->foreignId('institution_id')->constrained("institutions")->onDelete('cascade');
             $table->string('name');
@@ -20,6 +21,7 @@ return new class extends Migration
             $table->decimal('radius', 10, 2); // in meters
             $table->timestamps();
         });
+        }
     }
 
     /**

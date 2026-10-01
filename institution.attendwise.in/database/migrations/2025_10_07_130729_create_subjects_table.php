@@ -8,7 +8,8 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('institution_subjects', function (Blueprint $table) {
+        if (!\Illuminate\Support\Facades\Schema::hasTable('institution_subjects')) {
+            Schema::create('institution_subjects', function (Blueprint $table) {
             $table->id();
             $table->foreignId('department_id')->constrained("institution_departments")->cascadeOnDelete();
             $table->foreignId('institution_id')->constrained("institutions")->onDelete('cascade');
@@ -16,6 +17,7 @@ return new class extends Migration
             $table->string('code')->unique();
             $table->timestamps();
         });
+        }
     }
 
     public function down(): void

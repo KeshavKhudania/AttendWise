@@ -11,7 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('institution_courses', function (Blueprint $table) {
+        if (!\Illuminate\Support\Facades\Schema::hasTable('institution_courses')) {
+            Schema::create('institution_courses', function (Blueprint $table) {
             $table->id();
 
             // Each course is offered by a department
@@ -24,6 +25,7 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->timestamps();
         });
+        }
     }
 
     /**
