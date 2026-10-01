@@ -323,7 +323,7 @@ class StudentPwaController extends Controller
             $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
             $distance = $earthRadius * $c;
 
-            $allowedRadius = 5; // 5 meters strict limit
+            $allowedRadius = 40; // 40 meters strict limit
 
             if ($distance > $allowedRadius) {
                 return response()->json([
@@ -345,7 +345,7 @@ class StudentPwaController extends Controller
                 ], 403);
             }
 
-            $allowedRadius = 5;
+            $allowedRadius = 40;
             $earthRadius = 6371000;
             $latTo = deg2rad($studentLat);
             $lonTo = deg2rad($studentLng);
@@ -684,7 +684,7 @@ class StudentPwaController extends Controller
             return response()->json(['success' => false, 'message' => 'GPS coordinates are required.']);
         }
 
-        $allowedRadius = 5;
+        $allowedRadius = 40;
         $earthRadius = 6371000;
         $latTo = deg2rad($request->latitude);
         $lonTo = deg2rad($request->longitude);
